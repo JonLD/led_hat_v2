@@ -124,6 +124,7 @@ void setupTrellisKeypad()
     }
 }
 
+// --------- Wifi -----------
 void setupWifiConnection()
 {
     WiFi.mode(WIFI_STA);
@@ -163,12 +164,13 @@ void trySend()
             Serial.println(radioData.effect);
             Serial.print("Colour enum: ");
             Serial.println(radioData.colour);
+            oldRadioData = radioData;
         }
         else
         {
             Serial.println("Error sending the data");
         }
-        oldRadioData = radioData;
+        
     }
 }
 

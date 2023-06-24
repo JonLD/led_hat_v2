@@ -4,7 +4,7 @@ typedef struct radioData_t
     int8_t effect;
     int8_t colour;
     uint8_t brightness;
-    uint16_t beatLength;
+    uint16_t beatLength_ms;
     bool shouldAttemptResync;
 
     bool operator==(const radioData_t &other) const
@@ -13,7 +13,7 @@ typedef struct radioData_t
             effect == other.effect &&
             colour == other.colour &&
             brightness == other.brightness &&
-            beatLength == other.beatLength &&
+            beatLength_ms == other.beatLength_ms &&
             shouldAttemptResync == other.shouldAttemptResync);
     }
 } radioData_s;
@@ -48,6 +48,6 @@ radioData_t radioData = {
     .effect = enum_wave_flash_double,
     .colour = blue,
     .brightness = 100,
-    .beatLength = 483,
+    .beatLength_ms = 483,
     .shouldAttemptResync = false
 };
