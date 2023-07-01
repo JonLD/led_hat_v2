@@ -4,14 +4,15 @@
 #include <Wire.h>
 #include <interface.h>
 #include <FastLED.h>
+#include <beat_detection.h>
 
 uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
 
 // max x and y values of LED matrix
-const uint8_t NUMBER_X_LEDS = 6;
-const uint8_t NUMBER_Y_LEDS = 5;
-const uint8_t MAX_X_INDEX = NUMBER_X_LEDS - 1;
-const uint8_t MAX_Y_INDEX = NUMBER_Y_LEDS - 1;
+#define NUMBER_X_LEDS 6
+#define NUMBER_Y_LEDS 5
+#define MAX_X_INDEX (NUMBER_X_LEDS - 1)
+#define MAX_Y_INDEX (NUMBER_Y_LEDS - 1)
 
 // default all colours to blue
 CRGB colour1 = CRGB::Blue;
@@ -21,8 +22,8 @@ CRGB colour3 = CRGB::Blue;
 // Initialise varialbes needed for FastLED
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
-const long NUM_LEDS = (NUMBER_X_LEDS * NUMBER_Y_LEDS);
-const uint8_t LED_DATA_PIN = 22;
+#define NUM_LEDS (NUMBER_X_LEDS * NUMBER_Y_LEDS)
+#define LED_DATA_PIN 22
 
 CRGB leds[NUM_LEDS] = {0};
 
@@ -213,6 +214,9 @@ void setup()
     // Once ESPNow is successfully Init, we will register for recv CB to
     // get recv packer info
     esp_now_register_recv_cb(OnDataRecv);
+    // start up the I2S peripheral
+    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
+    i2s_set_pin(I2S_NUM_0, &i2s_mic_pins);
 
     // FastLED setup
     FastLED.addLeds<LED_TYPE, LED_DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
@@ -229,7 +233,28 @@ void loop()
         setEffectColour();
         oldRadioData.colour = radioData.colour;
     }
+    #ifdef PRINT_PROFILING
+    unsigned long initialMicros = micros();
+#endif
+    readMicData();
+#ifdef PRINT_PROFILING
+    Serial.print(" After assignedment: ");
+    Serial.print(micros() - initialMicros);
+#endif
+    computeFFT();
+    analyzeFrequencyBand(&bassFreqData);
+    analyzeFrequencyBand(&lowMidFreqData);
+#ifdef PRINT_PROFILING
+    Serial.print(" After analyze: ");
+    Serial.print(micros() - initialMicros);
+#endif
+    const bool isBeatDetected = detectBeat();
+    // controlLed(isBeatDetected);
     play_selected_effect();
+#ifdef PRINT_PROFILING
+    Serial.print(" After LED: ");
+    Serial.println(micros() - initialMicros);
+#endif
 }
 
 // ----- Effects -----
@@ -291,7 +316,7 @@ void wave_effect(int note_length)
                     y -= 1;
                 }
             }
-            EVERY_N_MILLIS(2)
+            EVERY_N_MILLIS(5)
             {
                 fadeToBlackBy(leds, NUM_LEDS, 10);
                 FastLED.show(note_length);
