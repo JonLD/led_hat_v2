@@ -65,7 +65,7 @@ void setColorOrEffect(int keypadButtonNumber)
     {
         radioData.colour = keypadButtonNumber;
     }
-    else if (keypadButtonNumber <= 20)
+    else if (keypadButtonNumber <= 21)
     {
         radioData.effect = keypadButtonNumber;
     }
@@ -178,8 +178,8 @@ void setup()
 {
     Serial.begin(115200);
     Serial.println("Setting up devic");
-    setupTrellisKeypad();
     setupWifiConnection();
+    setupTrellisKeypad();
 }
 
 
