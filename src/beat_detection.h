@@ -9,19 +9,20 @@
 #define I2S_MIC_SERIAL_DATA GPIO_NUM_33
 
 #define BEAT_DEBOUNCE_DURATION_MS 200 // Debounce the beat
-#define MAX_BASS_FREQUENCY_HZ 100
-
-#define COEFICIENT_AVERAGE_DECAY 0.99999
+#define MAX_BASS_FREQUENCY_HZ 140
 
 // Uncomment to enable print debugging (only enable one at a time)
 // #define PRINT_PROFILING
 // #define PRINT_BIN_MAGNITUDES
 // #define PRINT_NOT_BEAT_DETECTED_REASON
+// #define PRINT_CURRENT_BASS_MAG
 
 const uint16_t numberOfSamples = 512;     // This value MUST ALWAYS be a power of 2
 const uint32_t samplingFrequency = 25000;
 
 float lastBeatTime_ms = 0;
+bool isBeatDetected = false;
+unsigned long initialMicros;
 
 typedef struct freqBandData_t
 {
@@ -38,17 +39,17 @@ freqBandData_t bassFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
     .lowerBinIndex = 0,
-    .upperBinIndex = 2,
+    .upperBinIndex = 1,
     .beatDetectThresholdCoeff = 1.2,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 100000000};
+    .minMagnitude = 200000000};
 
-freqBandData_t lowMidFreqData{
+freqBandData_t midFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
-    .lowerBinIndex = 3,
-    .upperBinIndex = 5,
-    .beatDetectThresholdCoeff = 1.5,
+    .lowerBinIndex = 2,
+    .upperBinIndex = 3,
+    .beatDetectThresholdCoeff = 1.3,
     .leakyAverageCoeff = 0.125,
     .minMagnitude = 200000000};
 
@@ -66,9 +67,11 @@ arduinoFFT FFT = arduinoFFT(vReal, vImag, numberOfSamples, samplingFrequency); /
 void PrintVector(double *, uint16_t, uint8_t);
 void computeFFT();
 bool detectBeat();
+void controlLed(bool);
 void analyzeFrequencyBand(freqBandData_t *);
 void readMicData();
 bool isMagAboveThreshold(freqBandData_t);
+double proportionOfMagAboveAvg(freqBandData_t);
 
 float weighingFactors[numberOfSamples];
 
@@ -80,7 +83,7 @@ i2s_config_t i2s_config = {
     .channel_format = I2S_MIC_CHANNEL,
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = 2,
+    .dma_buf_count = 4,
     .dma_buf_len = 1024,
     .use_apll = false,
     .tx_desc_auto_clear = false,
@@ -101,9 +104,10 @@ void readMicData()
     size_t bytes_read = 0;
     i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * numberOfSamples, &bytes_read, portMAX_DELAY);
     int samples_read = bytes_read / sizeof(int32_t);
+    // Serial.println(samples_read);
 
 #ifdef PRINT_PROFILING
-    Serial.print("After read: ");
+    Serial.print(" Read: ");
     Serial.print(micros() - initialMicros);
 #endif
 
@@ -122,6 +126,8 @@ void computeFFT()
     FFT.Compute(FFTDirection::Forward);
     FFT.ComplexToMagnitude();
     frequencyPeak_Hz = FFT.MajorPeak();
+    analyzeFrequencyBand(&bassFreqData);
+    analyzeFrequencyBand(&midFreqData);
 }
 
 void analyzeFrequencyBand(freqBandData_t *freqBand)
@@ -144,13 +150,19 @@ void analyzeFrequencyBand(freqBandData_t *freqBand)
 bool detectBeat()
 {
     const bool isBassAboveAvg = isMagAboveThreshold(bassFreqData);
+    const bool isMidAboveAvg = isMagAboveThreshold(midFreqData);
     const bool isRecentBeat = ((millis() - lastBeatTime_ms) < (BEAT_DEBOUNCE_DURATION_MS));
     const bool peakIsBass = (frequencyPeak_Hz < MAX_BASS_FREQUENCY_HZ);
     const bool isAvgBassAboveMin = (bassFreqData.averageMagnitude > bassFreqData.minMagnitude);
+    const double proportionBassAboveAvg = proportionOfMagAboveAvg(bassFreqData);
+    const double proportionMidAboveAvg = proportionOfMagAboveAvg(midFreqData);
 
     const bool isBeatDetectedisBeatDetected = (
-        !isRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin
+        !isRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg
     );
+#ifdef PRINT_CURRENT_BASS_MAG
+    Serial.println(bassFreqData.currentMagnitude);
+#endif
 
 #ifdef PRINT_NOT_BEAT_DETECTED_REASON
     if (!isRecentBeat){
@@ -181,7 +193,6 @@ bool detectBeat()
         Serial.println(lastBeatTime_ms - millis());
 #endif
         lastBeatTime_ms = millis();
-        radioData.shouldAttemptResync = true;
 #ifdef PRINT_BIN_MAGNITUDES
         PrintVector(vReal, numberOfSamples, SCL_FREQUENCY);
         delay(20000);
@@ -193,15 +204,22 @@ bool detectBeat()
 
 bool isMagAboveThreshold(freqBandData_t freqBandData)
 {
-    const bool magIsAboveThreshold = (bassFreqData.currentMagnitude > (bassFreqData.averageMagnitude * bassFreqData.beatDetectThresholdCoeff));
+    const bool magIsAboveThreshold = (
+        bassFreqData.currentMagnitude > (bassFreqData.averageMagnitude * bassFreqData.beatDetectThresholdCoeff)
+    );
     return magIsAboveThreshold;
 }
 
+double proportionOfMagAboveAvg(freqBandData_t freqBandData)
+{
+    const double proportionAboveAvg = (bassFreqData.currentMagnitude /bassFreqData.averageMagnitude);
+    return proportionAboveAvg;
+}
 
 // Print various data for debugging
 void PrintVector(double *vData, uint16_t bufferSize, uint8_t scaleType)
 {
-    for (uint16_t i = 0; i < bufferSize / 2; i++)
+    for (uint16_t i = 0; i < bufferSize; i++)
     {
         double abscissa;
         /* Print abscissa value */
