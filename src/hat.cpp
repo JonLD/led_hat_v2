@@ -4,15 +4,14 @@
 #include <Wire.h>
 #include <interface.h>
 #include <FastLED.h>
+#include <config.h>
 #include <beat_detection.h>
 
-#define IS_HAT
+typedef void (*effect_function_ptr_t)();
 
 uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
 
 // max x and y values of LED matrix
-#define NUMBER_X_LEDS 35
-#define NUMBER_Y_LEDS 4
 #define MAX_X_INDEX (NUMBER_X_LEDS - 1)
 #define MAX_Y_INDEX (NUMBER_Y_LEDS - 1)
 
@@ -49,14 +48,15 @@ void verticalBars();
 void wave_effect();
 void strobe();
 
-int wave_flash_double[] = {wave_whole, wave_whole, flash_whole, flash_whole};
-int just_flash[] = {flash_whole, flash_whole, flash_whole, flash_whole};
-int twinkle[] = {twinkle_whole, twinkle_whole, twinkle_whole, twinkle_whole};
-int just_wave[] = {wave_whole, wave_whole, wave_whole, wave_whole};
-int wave_double[] = {wave_whole, wave_whole, wave_whole, wave_half, wave_half};
-int double_flash_n_wave = {};
-int strobe_bar[] = {strobe_whole, strobe_whole, strobe_whole, strobe_whole};
-int strobe_colour[] = {};
+effect_function_ptr_t wave_flash_double[] = {wave_effect, wave_effect, verticalBars, verticalBars};
+effect_function_ptr_t just_flash[] = {verticalBars};
+effect_function_ptr_t twinkle[] = {twinkle_shaker};
+effect_function_ptr_t just_wave[] = {wave_effect};
+effect_function_ptr_t strobe_bar[] = {strobe};
+
+// for getting the length of the above effect function pointer arrays
+template <class T, size_t N>
+constexpr size_t size(T (&)[N]) { return N; }
 
 // callback function that will be executed when data is received
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
@@ -138,47 +138,14 @@ void setEffectColour()
     }
 }
 
-void play_effect_sequence(int effects_array[], bool isBeatDetected)
+void play_effect_sequence(effect_function_ptr_t effects_array[], size_t array_size, bool isBeatDetected)
 {
     static int i = 0;
-    if (isBeatDetected)
+    if (isBeatDetected && ++i >= array_size)
     {
-        if (i < (sizeof(effects_array) / sizeof(effects_array[0])))
-        {
-            ++i;
-        }
-        else
-        {
-            i = 0;
-        }
+        i = 0;
     }
-    switch (effects_array[i])
-    {
-    case clear_display:
-        FastLED.clear();
-        break;
-    case wave_whole:
-        wave_effect();
-        break;
-    case wave_half:
-        wave_effect();
-        break;
-    case flash_whole:
-        verticalBars();
-        break;
-    case flash_half:
-        verticalBars();
-        break;
-    case twinkle_whole:
-        twinkle_shaker();
-        break;
-    case twinkle_half:
-        twinkle_shaker();
-        break;
-    case strobe_whole:
-        strobe();
-        break;
-    }
+    effects_array[i]();
 }
 
 // logic for selection of next pre-set effect
@@ -187,22 +154,19 @@ void play_selected_effect(bool isBeatDetected)
     switch (radioData.effect)
     {
     case enum_wave_flash_double:
-        play_effect_sequence(wave_flash_double, isBeatDetected);
+        play_effect_sequence(wave_flash_double, size(wave_flash_double), isBeatDetected);
         break;
     case enum_just_flash:
-        play_effect_sequence(just_flash, isBeatDetected);
+        play_effect_sequence(just_flash, size(just_flash), isBeatDetected);
         break;
     case enum_twinkle:
-        play_effect_sequence(twinkle, isBeatDetected);
+        play_effect_sequence(twinkle, size(twinkle), isBeatDetected);
         break;
     case enum_just_wave:
-        play_effect_sequence(just_wave, isBeatDetected);
-        break;
-    case enum_wave_double:
-        play_effect_sequence(wave_double, isBeatDetected);
+        play_effect_sequence(just_wave, size(just_wave), isBeatDetected);
         break;
     case enum_strobe_bar:
-        play_effect_sequence(strobe_bar, isBeatDetected);
+        play_effect_sequence(strobe_bar, size(strobe_bar), isBeatDetected);
         break;
     }
 }
@@ -260,7 +224,6 @@ void loop()
     Serial.print(micros() - initialMicros);
 #endif
     isBeatDetected = detectBeat();
-    // controlLed(isBeatDetected);
     play_selected_effect(isBeatDetected);
 #ifdef PRINT_PROFILING
     Serial.print(" LED: ");
@@ -283,7 +246,7 @@ int mapXYtoIndex(int x, int y)
         x++;
     }
 #endif
-    x %= MAX_X_INDEX;
+    x %= NUMBER_X_LEDS;
     int i;
     if (y % 2 == 0)
     {
@@ -337,7 +300,6 @@ void wave_effect()
     {
         fadeToBlackBy(leds, NUM_LEDS, 50);
     }
-
 }
 
 // 2
