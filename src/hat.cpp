@@ -6,6 +6,8 @@
 #include <FastLED.h>
 #include <beat_detection.h>
 
+#define IS_HAT
+
 uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
 
 // max x and y values of LED matrix
@@ -38,14 +40,14 @@ enum effect_choice : int
     flash_half,
     twinkle_whole, // bright spots lighting every 16th note and slowing fading
     twinkle_half,
-    strobe_whole
+    strobe_whole,
 };
 
 //-------------- Function prototypes --------------
-void twinkle_shaker(int);
-void verticalBars(int);
-void wave_effect(int);
-void strobe(int);
+void twinkle_shaker();
+void verticalBars();
+void wave_effect();
+void strobe();
 
 int wave_flash_double[] = {wave_whole, wave_whole, flash_whole, flash_whole};
 int just_flash[] = {flash_whole, flash_whole, flash_whole, flash_whole};
@@ -135,14 +137,15 @@ void setEffectColour()
         break;
     }
 }
-int i = 0;
+
 void play_effect_sequence(int effects_array[], bool isBeatDetected)
 {
+    static int i = 0;
     if (isBeatDetected)
     {
         if (i < (sizeof(effects_array) / sizeof(effects_array[0])))
         {
-            i++;
+            ++i;
         }
         else
         {
@@ -155,25 +158,25 @@ void play_effect_sequence(int effects_array[], bool isBeatDetected)
         FastLED.clear();
         break;
     case wave_whole:
-        wave_effect(1);
+        wave_effect();
         break;
     case wave_half:
-        wave_effect(2);
+        wave_effect();
         break;
     case flash_whole:
-        verticalBars(1);
+        verticalBars();
         break;
     case flash_half:
-        verticalBars(2);
+        verticalBars();
         break;
     case twinkle_whole:
-        twinkle_shaker(1);
+        twinkle_shaker();
         break;
     case twinkle_half:
-        twinkle_shaker(2);
+        twinkle_shaker();
         break;
     case strobe_whole:
-        strobe(1);
+        strobe();
         break;
     }
 }
@@ -270,7 +273,13 @@ void loop()
 // Map any x, y coordinate on LED matrix to LED array index
 int mapXYtoIndex(int x, int y)
 {
-
+#ifdef IS_HAT
+    if (y == 0 || y == 1)
+    {
+        x++;
+    }
+#endif
+    x %= MAX_X_INDEX;
     int i;
     if (y % 2 == 0)
     {
@@ -286,7 +295,7 @@ int mapXYtoIndex(int x, int y)
 }
 
 // 1
-void wave_effect(int note_length)
+void wave_effect()
 {
     static int16_t y = -1;
     if (isBeatDetected)
@@ -332,7 +341,7 @@ void wave_effect(int note_length)
 
 // 2
 // Flash LED and decay to 0
-void verticalBars(int note_length)
+void verticalBars()
 {
     if (isBeatDetected)
     {
@@ -374,11 +383,10 @@ void horizontalBars()
         fadeToBlackBy(leds, NUM_LEDS, 50);
         FastLED.show();
     }
-
 }
 
 // add new bright spots every quarter note
-void twinkle_shaker(int note_length)
+void twinkle_shaker()
 {
     EVERY_N_MILLIS(20)
     {
@@ -399,29 +407,19 @@ void twinkle_shaker(int note_length)
     }
 }
 
-void strobe(int note_length)
+void strobe()
 {
-    if (!radioData.shouldAttemptResync)
+    FastLED.clear();
+    EVERY_N_MILLISECONDS(40)
     {
-        unsigned long startOfBeatTime_ms = millis();
-        unsigned long currentTime_ms = startOfBeatTime_ms;
-        while (((currentTime_ms - startOfBeatTime_ms) < radioData.beatLength_ms) &&
-               (!radioData.shouldAttemptResync))
-        {
-            FastLED.clear();
-            EVERY_N_MILLISECONDS(100)
-            {
-                fill_solid(leds, NUM_LEDS, CRGB::White);
-                FastLED.show(note_length);
-            }
+        fill_solid(leds, NUM_LEDS, CRGB::White);
+        FastLED.show();
+    }
 
-            EVERY_N_MILLISECONDS(200)
-            {
-                fill_solid(leds, NUM_LEDS, CRGB::Black);
-                FastLED.show();
-            }
-            currentTime_ms = millis();
-        }
+    EVERY_N_MILLISECONDS(80)
+    {
+        fill_solid(leds, NUM_LEDS, CRGB::Black);
+        FastLED.show();
     }
 }
 
