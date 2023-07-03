@@ -266,6 +266,10 @@ void loop()
     Serial.print(" LED: ");
     Serial.println(micros() - initialMicros);
 #endif
+    EVERY_N_MILLIS(15)
+    {
+        FastLED.show();
+    }
     isBeatDetected = false;
 }
 
@@ -333,10 +337,7 @@ void wave_effect()
     {
         fadeToBlackBy(leds, NUM_LEDS, 50);
     }
-    EVERY_N_MILLIS(15)
-    {
-        FastLED.show();
-    }
+
 }
 
 // 2
@@ -359,7 +360,6 @@ void verticalBars()
     EVERY_N_MILLIS(5)
     {
         fadeToBlackBy(leds, NUM_LEDS, 50);
-        FastLED.show();
     }
 }
 
@@ -381,7 +381,6 @@ void horizontalBars()
     EVERY_N_MILLIS(5)
     {
         fadeToBlackBy(leds, NUM_LEDS, 50);
-        FastLED.show();
     }
 }
 
@@ -403,7 +402,6 @@ void twinkle_shaker()
         int rand_x4 = random(MAX_X_INDEX + 1);
         int rand_y4 = random(MAX_Y_INDEX + 1);
         leds[mapXYtoIndex(rand_x4, rand_y4)] = colour1;
-        FastLED.show();
     }
 }
 
@@ -413,13 +411,11 @@ void strobe()
     EVERY_N_MILLISECONDS(40)
     {
         fill_solid(leds, NUM_LEDS, CRGB::White);
-        FastLED.show();
     }
 
     EVERY_N_MILLISECONDS(80)
     {
         fill_solid(leds, NUM_LEDS, CRGB::Black);
-        FastLED.show();
     }
 }
 
@@ -434,14 +430,12 @@ void controlLed(bool isBeatDetected)
                 leds[mapXYtoIndex(x, y)] = CRGB::Blue;
             }
         }
-        FastLED.show();
     }
     else
     {
         EVERY_N_MILLIS(2)
         {
             fadeToBlackBy(leds, NUM_LEDS, 50);
-            FastLED.show();
         }
     }
 }
