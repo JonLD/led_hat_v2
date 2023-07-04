@@ -22,6 +22,7 @@ enum colourOrEffectEnum : long
     enum_twinkle = 21,
     enum_strobe_bar = 20,
     enum_horizontalBars = 22,
+    enum_just_wave_down = 23,
 };
 
 typedef struct radioData_t
@@ -44,7 +45,7 @@ typedef struct radioData_t
 } radioData_s;
 
 radioData_t radioData = {
-    .effect = enum_wave_flash_double,
+    .effect = enum_just_wave_down,
     .colour = blue,
     .brightness = 255,
     .beatLength_ms = 483,
