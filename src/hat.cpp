@@ -53,6 +53,7 @@ void verticalBars();
 void waveUp();
 void waveDown();
 void randomCross();
+void horizontalRays();
 void strobe();
 void waveClockwise();
 void waveAnticlockwise();
@@ -72,6 +73,7 @@ effect_function_ptr_t eigh_wave_eight_bars[] = {
     verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars,
     waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown};
 effect_function_ptr_t random_cross[] = {randomCross};
+effect_function_ptr_t horizontal_rays[] = {horizontalRays};
 
 // for getting the length of the above effect function pointer arrays
 template <class T, size_t N>
@@ -194,7 +196,7 @@ void effectSelectionEngine()
 // logic for selection of next pre-set effect
 void playSelectedEffect()
 {
-    PLAY_EFFECT_SEQUENCE(random_cross);
+    PLAY_EFFECT_SEQUENCE(horizontal_rays);
     return;
     switch (radioData.effect)
     {
@@ -301,6 +303,10 @@ int mapXYtoIndex(int x, int y)
     }
 #endif
     x %= NUMBER_X_LEDS;
+    if (x < 0)
+    {
+        x += NUMBER_X_LEDS;
+    }
     int i;
     if (y % 2 == 0)
     {
@@ -321,6 +327,17 @@ void fadeLeds(int fadeBy)
     {
         fadeToBlackBy(leds, NUM_LEDS, fadeBy);
     }
+}
+
+void generateDistributedRandomNumbers(int *outBuffer, int count, int min, int max)
+{
+    int zoneSize = (max - min + 1) / count;
+
+    for (int i = 0; i < count - 1; i++)
+    {
+        outBuffer[i] = random(min + zoneSize * i, min + zoneSize * (i + 1));
+    }
+    outBuffer[count - 1] = random(min + zoneSize * (count - 1), max + 1);
 }
 
 // 1
@@ -504,6 +521,7 @@ void horizontalBars()
                 leds[mapXYtoIndex(x, y)] = colour1;
             }
         }
+
         FastLED.show();
         yStart = yStart ? yStart : ++yStart;
     }
@@ -514,25 +532,68 @@ void randomCross()
 {
     if (isBeatDetected)
     {
-        int rand_x_limit = NUMBER_X_LEDS / 3;
-        int rand_x1 = random(rand_x_limit);
-        int rand_x2 = random(rand_x_limit, rand_x_limit * 2);
-        int rand_x3 = random(rand_x_limit * 2, NUMBER_X_LEDS);
+        int randXs[3] = {0};
+        generateDistributedRandomNumbers(randXs, 3, 0, MAX_X_INDEX);
 
-        int rand_y = RANDOM_Y;
+        int randY = RANDOM_Y;
 
         for (int x = 0; x <= MAX_X_INDEX; x++)
         {
-            leds[mapXYtoIndex(x, rand_y)] = colour1;
+            leds[mapXYtoIndex(x, randY)] = colour1;
         }
 
         for (int y = 0; y <= MAX_Y_INDEX; y++)
         {
-            leds[mapXYtoIndex(rand_x1, y)] = colour1;
-            leds[mapXYtoIndex(rand_x2, y)] = colour1;
-            leds[mapXYtoIndex(rand_x3, y)] = colour1;
+            for (int i = 0; i < 3; i++)
+            {
+                leds[mapXYtoIndex(randXs[i], y)] = colour1;
+            }
         }
     }
+    fadeLeds(100);
+}
+
+void horizontalRays()
+{
+    static bool active = false;
+    static int counter;
+    static int x1;
+    static int x2;
+    static int y1;
+    static int y2;
+
+    if (isBeatDetected)
+    {
+        active = true;
+        counter = 0;
+
+        x1 = RANDOM_X;
+        x2 = RANDOM_X;
+
+        int randYs[2] = {0};
+        generateDistributedRandomNumbers(randYs, 2, 0, MAX_Y_INDEX);
+        y1 = randYs[0];
+        y2 = randYs[1];
+    }
+
+    if (active)
+    {
+        EVERY_N_MILLISECONDS(5)
+        {
+            leds[mapXYtoIndex(x1 + counter, y1)] = colour1;
+            leds[mapXYtoIndex(x1 - counter, y1)] = colour1;
+
+            leds[mapXYtoIndex(x2 + counter, y2)] = colour2;
+            leds[mapXYtoIndex(x2 - counter, y2)] = colour2;
+
+            if (++counter > NUMBER_X_LEDS / 2)
+            {
+                active = false;
+                counter = 0;
+            }
+        }
+    }
+
     fadeLeds(100);
 }
 
