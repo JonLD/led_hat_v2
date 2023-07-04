@@ -71,10 +71,14 @@ effect_function_ptr_t eigh_wave_eight_bars[] = {
     waveUp, waveUp, waveUp, waveUp, waveUp, waveUp, waveUp, waveUp,
     verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars,
     waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown};
+effect_function_ptr_t random_cross[] = {randomCross};
 
 // for getting the length of the above effect function pointer arrays
 template <class T, size_t N>
-constexpr size_t size(T (&)[N]) { return N; }
+constexpr size_t size(T (&)[N])
+{
+    return N;
+}
 
 // callback function that will be executed when data is received
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
@@ -190,6 +194,8 @@ void effectSelectionEngine()
 // logic for selection of next pre-set effect
 void playSelectedEffect()
 {
+    PLAY_EFFECT_SEQUENCE(random_cross);
+    return;
     switch (radioData.effect)
     {
     case enum_wave_flash_double:
@@ -500,6 +506,32 @@ void horizontalBars()
         }
         FastLED.show();
         yStart = yStart ? yStart : ++yStart;
+    }
+    fadeLeds(100);
+}
+
+void randomCross()
+{
+    if (isBeatDetected)
+    {
+        int rand_x_limit = NUMBER_X_LEDS / 3;
+        int rand_x1 = random(rand_x_limit);
+        int rand_x2 = random(rand_x_limit, rand_x_limit * 2);
+        int rand_x3 = random(rand_x_limit * 2, NUMBER_X_LEDS);
+
+        int rand_y = RANDOM_Y;
+
+        for (int x = 0; x <= MAX_X_INDEX; x++)
+        {
+            leds[mapXYtoIndex(x, rand_y)] = colour1;
+        }
+
+        for (int y = 0; y <= MAX_Y_INDEX; y++)
+        {
+            leds[mapXYtoIndex(rand_x1, y)] = colour1;
+            leds[mapXYtoIndex(rand_x2, y)] = colour1;
+            leds[mapXYtoIndex(rand_x3, y)] = colour1;
+        }
     }
     fadeLeds(100);
 }
