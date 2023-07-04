@@ -66,7 +66,7 @@ arduinoFFT FFT = arduinoFFT(vReal, vImag, numberOfSamples, samplingFrequency); /
 
 void PrintVector(double *, uint16_t, uint8_t);
 void computeFFT();
-bool detectBeat();
+void detectBeat();
 void controlLed(bool);
 void analyzeFrequencyBand(freqBandData_t *);
 void readMicData();
@@ -147,7 +147,7 @@ void analyzeFrequencyBand(freqBandData_t *freqBand)
     );
 }
 
-bool detectBeat()
+void detectBeat()
 {
     const bool isBassAboveAvg = isMagAboveThreshold(bassFreqData);
     const bool isMidAboveAvg = isMagAboveThreshold(midFreqData);
@@ -157,13 +157,13 @@ bool detectBeat()
     const double proportionBassAboveAvg = proportionOfMagAboveAvg(bassFreqData);
     const double proportionMidAboveAvg = proportionOfMagAboveAvg(midFreqData);
 
-    const bool isBeatDetectedisBeatDetected = (
+    isBeatDetected = (
         !isRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg
     );
+
 #ifdef PRINT_CURRENT_BASS_MAG
     Serial.println(bassFreqData.currentMagnitude);
 #endif
-
 #ifdef PRINT_NOT_BEAT_DETECTED_REASON
     if (!isRecentBeat){
         if (isBassAboveAvg && peakIsBass)
@@ -187,18 +187,15 @@ bool detectBeat()
         Serial.print("\n");
     }
 #endif
-    if (isBeatDetectedisBeatDetected)
+
+    if (isBeatDetected)
     {
-#ifdef PRINT_NOT_BEAT_DETECTED_REASON
-        Serial.println(lastBeatTime_ms - millis());
-#endif
         lastBeatTime_ms = millis();
 #ifdef PRINT_BIN_MAGNITUDES
         PrintVector(vReal, numberOfSamples, SCL_FREQUENCY);
         delay(20000);
 #endif
     }
-    return isBeatDetectedisBeatDetected;
 }
 
 

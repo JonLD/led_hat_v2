@@ -1,5 +1,6 @@
 enum colourOrEffectEnum : long
 {
+    // Colours
     white = 0,
     red = 7,
     green = 11,
@@ -15,13 +16,20 @@ enum colourOrEffectEnum : long
     fire = 4,
     purue = 14,
     blue_red = 15,
+    // Beat effects
     enum_wave_flash_double = 16,
-    enum_just_flash = 17,
-    enum_just_wave = 18,
-    enum_wave_double = 19,
-    enum_twinkle = 21,
-    enum_strobe_bar = 20,
-    enum_horizontalBars = 22,
+    enum_vertical_bars_clockwise = 17,
+    enum_just_wave_up = 18,
+    enum_just_wave_down = 19,
+    enum_horizontal_bars = 20,
+    // Strobe >:D
+    enum_strobe = 24,
+    // Ambient effects
+    enum_wave_anticlockwise = 32,
+    enum_wave_clockwise = 33, 
+    enum_twinkle = 34,
+    enum_noEffect = 35,
+
 };
 
 typedef struct radioData_t

@@ -26,6 +26,8 @@ CRGB colour3 = CRGB::Blue;
 #define NUM_LEDS (NUMBER_X_LEDS * NUMBER_Y_LEDS)
 #define LED_DATA_PIN 22
 
+#define PLAY_EFFECT_SEQUENCE(effect) play_effect_sequence(effect, size(effect))
+
 CRGB leds[NUM_LEDS] = {0};
 
 // enum encoding effect with whole and half denoting
@@ -43,16 +45,28 @@ enum effect_choice : int
 };
 
 //-------------- Function prototypes --------------
-void twinkle_shaker();
+void twinkle();
 void verticalBars();
-void wave_effect();
+void waveUp();
+void waveDown();
 void strobe();
+void waveClockwise();
+void waveAnticlockwise();
 
-effect_function_ptr_t wave_flash_double[] = {wave_effect, wave_effect, verticalBars, verticalBars};
-effect_function_ptr_t just_flash[] = {verticalBars};
-effect_function_ptr_t twinkle[] = {twinkle_shaker};
-effect_function_ptr_t just_wave[] = {wave_effect};
-effect_function_ptr_t strobe_bar[] = {strobe};
+effect_function_ptr_t wave_flash_double[] = {waveUp, waveUp, verticalBars, verticalBars};
+effect_function_ptr_t vertical_bars_clockwise[] = {verticalBars};
+effect_function_ptr_t twinkle_[] = {twinkle};
+effect_function_ptr_t wave_clockwise[] = {waveClockwise};
+effect_function_ptr_t wave_anticlockwise[] = {waveAnticlockwise};
+effect_function_ptr_t wave_up[] = {waveUp};
+effect_function_ptr_t strobe_[] = {strobe};
+effect_function_ptr_t wave_down[] = {waveDown};
+effect_function_ptr_t wave_up_down[] = {waveDown, waveUp, waveDown, waveUp};
+effect_function_ptr_t eigh_wave_eight_bars[] = {
+    waveUp, waveUp, waveUp, waveUp, waveUp, waveUp, waveUp, waveUp,
+    verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, 
+    waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown
+};
 
 // for getting the length of the above effect function pointer arrays
 template <class T, size_t N>
@@ -138,7 +152,7 @@ void setEffectColour()
     }
 }
 
-void play_effect_sequence(effect_function_ptr_t effects_array[], size_t array_size, bool isBeatDetected)
+void play_effect_sequence(effect_function_ptr_t effects_array[], size_t array_size)
 {
     static int i = 0;
     if (isBeatDetected && ++i >= array_size)
@@ -148,25 +162,56 @@ void play_effect_sequence(effect_function_ptr_t effects_array[], size_t array_si
     effects_array[i]();
 }
 
+#define AMBIENT_EFFECT_TIMEOUT_MS 1000
+#define BEAT_EFFECT_TIMEOUT_MS 520
+void effectSelectionEngine()
+{
+    static bool isAmbientSection = false;
+    if (((millis() - lastBeatTime_ms) > AMBIENT_EFFECT_TIMEOUT_MS) && !isAmbientSection)
+    {
+        radioData.effect = random(32, 36);
+        isAmbientSection = true;
+    }
+    else if (millis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)
+    {
+        radioData.effect = random(17, 19);
+    }
+    if (isBeatDetected && isAmbientSection)
+    {
+        isAmbientSection = false;
+        radioData.effect = random(17, 19);
+    }
+
+}
+
 // logic for selection of next pre-set effect
-void play_selected_effect(bool isBeatDetected)
+void playSelectedEffect()
 {
     switch (radioData.effect)
     {
     case enum_wave_flash_double:
-        play_effect_sequence(wave_flash_double, size(wave_flash_double), isBeatDetected);
+        PLAY_EFFECT_SEQUENCE(wave_flash_double);
         break;
-    case enum_just_flash:
-        play_effect_sequence(just_flash, size(just_flash), isBeatDetected);
+    case enum_vertical_bars_clockwise:
+        PLAY_EFFECT_SEQUENCE(vertical_bars_clockwise);
         break;
     case enum_twinkle:
-        play_effect_sequence(twinkle, size(twinkle), isBeatDetected);
+        PLAY_EFFECT_SEQUENCE(twinkle_);
         break;
-    case enum_just_wave:
-        play_effect_sequence(just_wave, size(just_wave), isBeatDetected);
+    case enum_just_wave_up:
+        PLAY_EFFECT_SEQUENCE(wave_up);
         break;
-    case enum_strobe_bar:
-        play_effect_sequence(strobe_bar, size(strobe_bar), isBeatDetected);
+    case enum_just_wave_down:
+        PLAY_EFFECT_SEQUENCE(wave_down);
+        break;
+    case enum_strobe:
+        PLAY_EFFECT_SEQUENCE(strobe_);
+        break;
+    case enum_wave_clockwise:
+        PLAY_EFFECT_SEQUENCE(wave_clockwise);
+        break;
+    case enum_wave_anticlockwise:
+        PLAY_EFFECT_SEQUENCE(wave_anticlockwise);
         break;
     }
 }
@@ -218,13 +263,13 @@ void loop()
     Serial.print(micros() - initialMicros);
 #endif
     computeFFT();
-
 #ifdef PRINT_PROFILING
     Serial.print(" Analyze: ");
     Serial.print(micros() - initialMicros);
 #endif
-    isBeatDetected = detectBeat();
-    play_selected_effect(isBeatDetected);
+    detectBeat();
+    effectSelectionEngine();
+    playSelectedEffect();
 #ifdef PRINT_PROFILING
     Serial.print(" LED: ");
     Serial.println(micros() - initialMicros);
@@ -262,7 +307,7 @@ int mapXYtoIndex(int x, int y)
 }
 
 // 1
-void wave_effect()
+void waveUp()
 {
     static int16_t y = -1;
     if (isBeatDetected)
@@ -294,6 +339,126 @@ void wave_effect()
                 }
             }
             y -= 1;
+        }
+    }
+    EVERY_N_MILLIS(5)
+    {
+        fadeToBlackBy(leds, NUM_LEDS, 50);
+    }
+}
+
+void waveClockwise()
+{
+    static int16_t x = 0;
+    if (x <= MAX_X_INDEX)
+    {
+        EVERY_N_MILLISECONDS(40)
+        {
+            for (int y = 0; y <= MAX_Y_INDEX; ++y)
+            { // Fill x row
+                // sequence of logic to create pattern
+                if ((x % 2 == 0) && (y % 2 != 0))
+                {
+                    leds[mapXYtoIndex(x, y)] = colour1;
+                }
+                else if ((x % 2 == 0) && (y % 2 == 0))
+                {
+                    leds[mapXYtoIndex(x, y)] = colour3;
+                }
+                else if (y % 2 == 0)
+                {
+                    leds[mapXYtoIndex(x, y)] = colour2;
+                }
+                else
+                {
+                    leds[mapXYtoIndex(x, y)] = colour3;
+                }
+            }
+            ++x;
+        }
+    }
+    else 
+    {
+        x = 0;
+    }
+    EVERY_N_MILLIS(5)
+    {
+        fadeToBlackBy(leds, NUM_LEDS, 50);
+    }
+}
+
+void waveAnticlockwise()
+{
+    static int16_t x = 0;
+    if (x >= 0)
+    {
+        EVERY_N_MILLISECONDS(40)
+        {
+            for (int y = 0; y <= MAX_Y_INDEX; ++y)
+            { // Fill x row
+                // sequence of logic to create pattern
+                if ((x % 2 == 0) && (y % 2 != 0))
+                {
+                    leds[mapXYtoIndex(x, y)] = colour1;
+                }
+                else if ((x % 2 == 0) && (y % 2 == 0))
+                {
+                    leds[mapXYtoIndex(x, y)] = colour3;
+                }
+                else if (y % 2 == 0)
+                {
+                    leds[mapXYtoIndex(x, y)] = colour2;
+                }
+                else
+                {
+                    leds[mapXYtoIndex(x, y)] = colour3;
+                }
+            }
+            --x;
+        }
+    }
+    else 
+    {
+        x = MAX_X_INDEX;
+    }
+    EVERY_N_MILLIS(5)
+    {
+        fadeToBlackBy(leds, NUM_LEDS, 50);
+    }
+}
+
+void waveDown()
+{
+    static int16_t y = -1;
+    if (isBeatDetected)
+    {
+        y = 0;
+    }
+    if (y <= MAX_Y_INDEX)
+    {
+        EVERY_N_MILLISECONDS(40)
+        {
+            for (int x = 0; x <= MAX_X_INDEX; ++x)
+            { // Fill x row
+                // sequence of logic to create pattern
+                if ((y % 2 == 0) && (x % 2 != 0))
+                {
+                    leds[mapXYtoIndex(x, y)] = colour1;
+                }
+                else if ((y % 2 == 0) && (x % 2 == 0))
+                {
+                    leds[mapXYtoIndex(x, y)] = colour3;
+                }
+                else if (x % 2 == 0)
+                {
+                    leds[mapXYtoIndex(x, y)] = colour2;
+                }
+                else
+                {
+                    leds[mapXYtoIndex(x, y)] = colour3;
+                }
+            }
+            ++y;
         }
     }
     EVERY_N_MILLIS(5)
@@ -347,7 +512,7 @@ void horizontalBars()
 }
 
 // add new bright spots every quarter note
-void twinkle_shaker()
+void twinkle()
 {
     EVERY_N_MILLIS(20)
     {
