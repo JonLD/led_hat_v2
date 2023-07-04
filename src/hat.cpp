@@ -15,6 +15,9 @@ uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
 #define MAX_X_INDEX (NUMBER_X_LEDS - 1)
 #define MAX_Y_INDEX (NUMBER_Y_LEDS - 1)
 
+#define RANDOM_X random(MAX_X_INDEX + 1)
+#define RANDOM_Y random(MAX_Y_INDEX + 1)
+
 // default all colours to blue
 CRGB colour1 = CRGB::Blue;
 CRGB colour2 = CRGB::Blue;
@@ -49,11 +52,13 @@ void twinkle();
 void verticalBars();
 void waveUp();
 void waveDown();
+void randomCross();
 void strobe();
 void waveClockwise();
 void waveAnticlockwise();
 
 effect_function_ptr_t wave_flash_double[] = {waveUp, waveUp, verticalBars, verticalBars};
+effect_function_ptr_t triple_bar_wave[] = {verticalBars, verticalBars, verticalBars, waveUp};
 effect_function_ptr_t vertical_bars_clockwise[] = {verticalBars};
 effect_function_ptr_t twinkle_[] = {twinkle};
 effect_function_ptr_t wave_clockwise[] = {waveClockwise};
@@ -64,9 +69,8 @@ effect_function_ptr_t wave_down[] = {waveDown};
 effect_function_ptr_t wave_up_down[] = {waveDown, waveUp, waveDown, waveUp};
 effect_function_ptr_t eigh_wave_eight_bars[] = {
     waveUp, waveUp, waveUp, waveUp, waveUp, waveUp, waveUp, waveUp,
-    verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, 
-    waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown
-};
+    verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars,
+    waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown};
 
 // for getting the length of the above effect function pointer arrays
 template <class T, size_t N>
@@ -181,7 +185,6 @@ void effectSelectionEngine()
         isAmbientSection = false;
         radioData.effect = random(17, 19);
     }
-
 }
 
 // logic for selection of next pre-set effect
@@ -306,6 +309,14 @@ int mapXYtoIndex(int x, int y)
     return i;
 }
 
+void fadeLeds(int fadeBy)
+{
+    EVERY_N_MILLIS(15)
+    {
+        fadeToBlackBy(leds, NUM_LEDS, fadeBy);
+    }
+}
+
 // 1
 void waveUp()
 {
@@ -341,10 +352,7 @@ void waveUp()
             y -= 1;
         }
     }
-    EVERY_N_MILLIS(5)
-    {
-        fadeToBlackBy(leds, NUM_LEDS, 50);
-    }
+    fadeLeds(100);
 }
 
 void waveClockwise()
@@ -377,14 +385,11 @@ void waveClockwise()
             ++x;
         }
     }
-    else 
+    else
     {
         x = 0;
     }
-    EVERY_N_MILLIS(5)
-    {
-        fadeToBlackBy(leds, NUM_LEDS, 50);
-    }
+    fadeLeds(100);
 }
 
 void waveAnticlockwise()
@@ -417,14 +422,11 @@ void waveAnticlockwise()
             --x;
         }
     }
-    else 
+    else
     {
         x = MAX_X_INDEX;
     }
-    EVERY_N_MILLIS(5)
-    {
-        fadeToBlackBy(leds, NUM_LEDS, 50);
-    }
+    fadeLeds(100);
 }
 
 void waveDown()
@@ -461,10 +463,7 @@ void waveDown()
             ++y;
         }
     }
-    EVERY_N_MILLIS(5)
-    {
-        fadeToBlackBy(leds, NUM_LEDS, 50);
-    }
+    fadeLeds(100);
 }
 
 // 2
@@ -484,10 +483,7 @@ void verticalBars()
         FastLED.show();
         xStart = (xStart == 3) ? (xStart - 2) : ++xStart;
     }
-    EVERY_N_MILLIS(5)
-    {
-        fadeToBlackBy(leds, NUM_LEDS, 50);
-    }
+    fadeLeds(100);
 }
 
 void horizontalBars()
@@ -505,30 +501,19 @@ void horizontalBars()
         FastLED.show();
         yStart = yStart ? yStart : ++yStart;
     }
-    EVERY_N_MILLIS(5)
-    {
-        fadeToBlackBy(leds, NUM_LEDS, 50);
-    }
+    fadeLeds(100);
 }
 
 // add new bright spots every quarter note
 void twinkle()
 {
+    fadeLeds(20);
     EVERY_N_MILLIS(20)
     {
-        fadeToBlackBy(leds, NUM_LEDS, 25);
-        int rand_x1 = random(MAX_X_INDEX + 1);
-        int rand_y1 = random(MAX_Y_INDEX + 1);
-        leds[mapXYtoIndex(rand_x1, rand_y1)] = colour1;
-        int rand_x2 = random(MAX_X_INDEX + 1);
-        int rand_y2 = random(MAX_Y_INDEX + 1);
-        leds[mapXYtoIndex(rand_x2, rand_y2)] = colour2;
-        int rand_x3 = random(MAX_X_INDEX + 1);
-        int rand_y3 = random(MAX_Y_INDEX + 1);
-        leds[mapXYtoIndex(rand_x3, rand_y3)] = colour3;
-        int rand_x4 = random(MAX_X_INDEX + 1);
-        int rand_y4 = random(MAX_Y_INDEX + 1);
-        leds[mapXYtoIndex(rand_x4, rand_y4)] = colour1;
+        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = colour1;
+        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = colour2;
+        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = colour3;
+        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = colour1;
     }
 }
 
@@ -560,9 +545,6 @@ void controlLed(bool isBeatDetected)
     }
     else
     {
-        EVERY_N_MILLIS(2)
-        {
-            fadeToBlackBy(leds, NUM_LEDS, 50);
-        }
+        fadeLeds(400);
     }
 }
