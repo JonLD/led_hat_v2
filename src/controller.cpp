@@ -63,10 +63,12 @@ void setColorOrEffect(int keypadButtonNumber)
 {
     if (keypadButtonNumber <= 16)
     {
+        radioData.isEffectCommand = false;
         radioData.colour = keypadButtonNumber;
     }
     else if (keypadButtonNumber <= 21)
     {
+        radioData.isEffectCommand = true;
         radioData.effect = keypadButtonNumber;
     }
 }
@@ -136,7 +138,6 @@ void setupWifiConnection()
     }
 
     esp_now_register_send_cb(OnDataSent);
-    
 
     // register peer
     peerInfo.channel = 0;
@@ -170,7 +171,6 @@ void trySend()
         {
             Serial.println("Error sending the data");
         }
-        
     }
 }
 
@@ -181,7 +181,6 @@ void setup()
     setupWifiConnection();
     setupTrellisKeypad();
 }
-
 
 void loop()
 {

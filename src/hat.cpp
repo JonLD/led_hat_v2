@@ -8,6 +8,7 @@
 #include <beat_detection.h>
 
 typedef void (*effect_function_ptr_t)();
+typedef const effect_function_ptr_t effect_array_t[];
 
 uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
 
@@ -33,20 +34,6 @@ CRGB colour3 = CRGB::Blue;
 
 CRGB leds[NUM_LEDS] = {0};
 
-// enum encoding effect with whole and half denoting
-// 1 and 1/2 beat length of effect respectively
-enum effect_choice : int
-{
-    clear_display, // clear all leds
-    wave_whole,    // vertically rising horizontal wave with fading tail
-    wave_half,
-    flash_whole, // flash of vertical lines
-    flash_half,
-    twinkle_whole, // bright spots lighting every 16th note and slowing fading
-    twinkle_half,
-    strobe_whole,
-};
-
 //-------------- Function prototypes --------------
 void twinkle();
 void verticalBars();
@@ -58,22 +45,25 @@ void strobe();
 void waveClockwise();
 void waveAnticlockwise();
 
-effect_function_ptr_t wave_flash_double[] = {waveUp, waveUp, verticalBars, verticalBars};
-effect_function_ptr_t triple_bar_wave[] = {verticalBars, verticalBars, verticalBars, waveUp};
-effect_function_ptr_t vertical_bars_clockwise[] = {verticalBars};
-effect_function_ptr_t twinkle_[] = {twinkle};
-effect_function_ptr_t wave_clockwise[] = {waveClockwise};
-effect_function_ptr_t wave_anticlockwise[] = {waveAnticlockwise};
-effect_function_ptr_t wave_up[] = {waveUp};
-effect_function_ptr_t strobe_[] = {strobe};
-effect_function_ptr_t wave_down[] = {waveDown};
-effect_function_ptr_t wave_up_down[] = {waveDown, waveUp, waveDown, waveUp};
-effect_function_ptr_t eigh_wave_eight_bars[] = {
+effect_array_t wave_flash_double = {waveUp, waveUp, verticalBars, verticalBars};
+effect_array_t triple_bar_wave = {verticalBars, verticalBars, verticalBars, waveUp};
+effect_array_t vertical_bars_clockwise = {verticalBars};
+effect_array_t twinkle_ = {twinkle};
+effect_array_t wave_clockwise = {waveClockwise};
+effect_array_t wave_anticlockwise = {waveAnticlockwise};
+effect_array_t wave_up = {waveUp};
+effect_array_t strobe_ = {strobe};
+effect_array_t wave_down = {waveDown};
+effect_array_t wave_up_down = {waveDown, waveUp, waveDown, waveUp};
+effect_array_t eigh_wave_eight_bars = {
     waveUp, waveUp, waveUp, waveUp, waveUp, waveUp, waveUp, waveUp,
     verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars, verticalBars,
     waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown, waveDown};
-effect_function_ptr_t random_cross[] = {randomCross};
-effect_function_ptr_t horizontal_rays[] = {horizontalRays};
+effect_array_t random_cross = {randomCross};
+effect_array_t horizontal_rays = {horizontalRays};
+
+Colour currentColour = static_cast<Colour>(radioData.colour);
+Effect currentEffect = static_cast<Effect>(radioData.effect);
 
 // for getting the length of the above effect function pointer arrays
 template <class T, size_t N>
@@ -100,69 +90,69 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 // logic for selection of different colour pallettes
 void setEffectColour()
 {
-    switch (radioData.colour)
+    switch (currentColour)
     {
-    case red:
+    case Colour::red:
         colour1 = colour2 = colour3 = CRGB::Red;
         break;
-    case blue:
+    case Colour::blue:
         colour1 = colour2 = colour3 = CRGB::Blue;
         break;
-    case green:
+    case Colour::green:
         colour1 = colour2 = colour3 = CRGB::Green;
         break;
-    case purple:
+    case Colour::purple:
         colour1 = colour2 = colour3 = CRGB::Purple;
         break;
-    case white:
+    case Colour::white:
         colour1 = colour2 = colour3 = CRGB::White;
         break;
-    case yellow:
+    case Colour::yellow:
         colour1 = colour2 = colour3 = CRGB::Yellow;
         break;
-    case orange:
+    case Colour::orange:
         colour1 = colour2 = colour3 = CRGB::OrangeRed;
         break;
-    case red_white:
+    case Colour::red_white:
         colour1 = colour2 = CRGB::Red;
         colour3 = CRGB::White;
         break;
-    case green_white:
+    case Colour::green_white:
         colour1 = colour2 = CRGB::Green;
         colour3 = CRGB::White;
         break;
-    case blue_white:
+    case Colour::blue_white:
         colour1 = colour2 = CRGB::Blue;
         colour3 = CRGB::White;
         break;
-    case cb:
+    case Colour::cb:
         colour1 = CRGB::OrangeRed;
         colour2 = CRGB::Green;
         colour3 = CRGB::Purple;
         break;
-    case cd:
+    case Colour::cd:
         colour1 = CRGB::Yellow;
         colour2 = CRGB::Blue;
         colour3 = CRGB::Purple;
         break;
-    case fire:
+    case Colour::fire:
         colour1 = CRGB::Yellow;
         colour2 = CRGB::Red;
         colour3 = CRGB::OrangeRed;
         break;
-    case purue:
+    case Colour::purue:
         colour1 = CRGB::Purple;
         colour2 = CRGB::Red;
         colour3 = CRGB::Blue;
         break;
-    case blue_red:
+    case Colour::blue_red:
         colour1 = colour2 = CRGB::Blue;
         colour3 = CRGB::Red;
         break;
     }
 }
 
-void play_effect_sequence(effect_function_ptr_t effects_array[], size_t array_size)
+void play_effect_sequence(effect_array_t effects_array, size_t array_size)
 {
     static int i = 0;
     if (isBeatDetected && ++i >= array_size)
@@ -179,49 +169,47 @@ void effectSelectionEngine()
     static bool isAmbientSection = false;
     if (((millis() - lastBeatTime_ms) > AMBIENT_EFFECT_TIMEOUT_MS) && !isAmbientSection)
     {
-        radioData.effect = random(32, 36);
+        currentEffect = static_cast<Effect>(random(32, 36));
         isAmbientSection = true;
     }
     else if (millis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)
     {
-        radioData.effect = random(17, 19);
+        currentEffect = static_cast<Effect>(random(17, 19));
     }
     if (isBeatDetected && isAmbientSection)
     {
         isAmbientSection = false;
-        radioData.effect = random(17, 19);
+        currentEffect = static_cast<Effect>(random(17, 19));
     }
 }
 
 // logic for selection of next pre-set effect
 void playSelectedEffect()
 {
-    PLAY_EFFECT_SEQUENCE(horizontal_rays);
-    return;
-    switch (radioData.effect)
+    switch (currentEffect)
     {
-    case enum_wave_flash_double:
+    case Effect::wave_flash_double:
         PLAY_EFFECT_SEQUENCE(wave_flash_double);
         break;
-    case enum_vertical_bars_clockwise:
+    case Effect::vertical_bars_clockwise:
         PLAY_EFFECT_SEQUENCE(vertical_bars_clockwise);
         break;
-    case enum_twinkle:
+    case Effect::twinkle:
         PLAY_EFFECT_SEQUENCE(twinkle_);
         break;
-    case enum_just_wave_up:
+    case Effect::just_wave_up:
         PLAY_EFFECT_SEQUENCE(wave_up);
         break;
-    case enum_just_wave_down:
+    case Effect::just_wave_down:
         PLAY_EFFECT_SEQUENCE(wave_down);
         break;
-    case enum_strobe:
+    case Effect::strobe:
         PLAY_EFFECT_SEQUENCE(strobe_);
         break;
-    case enum_wave_clockwise:
+    case Effect::wave_clockwise:
         PLAY_EFFECT_SEQUENCE(wave_clockwise);
         break;
-    case enum_wave_anticlockwise:
+    case Effect::wave_anticlockwise:
         PLAY_EFFECT_SEQUENCE(wave_anticlockwise);
         break;
     }
@@ -253,16 +241,24 @@ void setup()
     setEffectColour();
 }
 
-radioData_t oldRadioData = radioData;
 void loop()
 {
 #ifdef PRINT_PROFILING
     initialMicros = micros();
 #endif
-    if (oldRadioData.colour != radioData.colour)
+    if (radioData.isEffectCommand)
     {
-        setEffectColour();
-        oldRadioData.colour = radioData.colour;
+        radioData.isEffectCommand = false;
+        currentEffect = static_cast<Effect>(radioData.effect);
+    }
+    else
+    {
+        Colour radioDataColour = static_cast<Colour>(radioData.colour);
+        if (currentColour != radioDataColour)
+        {
+            currentColour = radioDataColour;
+            setEffectColour();
+        }
     }
 #ifdef PRINT_PROFILING
     Serial.print(" Set colour: ");
