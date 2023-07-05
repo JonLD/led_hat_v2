@@ -1,4 +1,4 @@
-enum colourOrEffectEnum : long
+enum class Colour : int8_t
 {
     // Colours
     white = 0,
@@ -16,24 +16,28 @@ enum colourOrEffectEnum : long
     fire = 4,
     purue = 14,
     blue_red = 15,
-    // Beat effects
-    enum_wave_flash_double = 16,
-    enum_vertical_bars_clockwise = 17,
-    enum_just_wave_up = 18,
-    enum_just_wave_down = 19,
-    enum_horizontal_bars = 20,
-    // Strobe >:D
-    enum_strobe = 24,
-    // Ambient effects
-    enum_wave_anticlockwise = 32,
-    enum_wave_clockwise = 33, 
-    enum_twinkle = 34,
-    enum_noEffect = 35,
+};
 
+enum class Effect : int8_t
+{
+    // Beat effects
+    wave_flash_double = 16,
+    vertical_bars_clockwise = 17,
+    just_wave_up = 18,
+    just_wave_down = 19,
+    horizontal_bars = 20,
+    // Strobe >:D
+    strobe = 24,
+    // Ambient effects
+    wave_anticlockwise = 32,
+    wave_clockwise = 33,
+    twinkle = 34,
+    noEffect = 35,
 };
 
 typedef struct radioData_t
 {
+    bool isEffectCommand;
     int8_t effect;
     int8_t colour;
     uint8_t brightness;
@@ -43,6 +47,7 @@ typedef struct radioData_t
     bool operator==(const radioData_t &other) const
     {
         return (
+            isEffectCommand == other.isEffectCommand &&
             effect == other.effect &&
             colour == other.colour &&
             brightness == other.brightness &&
@@ -52,11 +57,10 @@ typedef struct radioData_t
 } radioData_s;
 
 radioData_t radioData = {
-    .effect = enum_wave_flash_double,
-    .colour = blue,
+    .isEffectCommand = false,
+    .effect = static_cast<int8_t>(Effect::wave_flash_double),
+    .colour = static_cast<int8_t>(Colour::blue),
     .brightness = 255,
     .beatLength_ms = 483,
     .shouldAttemptResync = false,
 };
-
-
