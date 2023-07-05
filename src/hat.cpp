@@ -343,6 +343,19 @@ void generateDistributedRandomNumbers(int *outBuffer, int count, int min, int ma
     outBuffer[count - 1] = random(min + zoneSize * (count - 1), max + 1);
 }
 
+CRGB getRandomColourChoice()
+{
+    switch (random(3))
+    {
+    case 0:
+        return colour1;
+    case 1:
+        return colour2;
+    case 2:
+        return colour3;
+    }
+}
+
 // 1
 void waveUp()
 {
@@ -559,37 +572,30 @@ void randomCross()
 void horizontalRays()
 {
     static bool active = false;
-    static int counter;
-    static int x1;
-    static int x2;
-    static int y1;
-    static int y2;
+    static int counter = 0;
+    static int x1 = 0;
+    static int x2 = MAX_X_INDEX / 2;
+    static int y = -1;
 
     if (isBeatDetected)
     {
         active = true;
         counter = 0;
 
-        x1 = RANDOM_X;
-        x2 = RANDOM_X;
-
-        int randYs[2] = {0};
-        generateDistributedRandomNumbers(randYs, 2, 0, MAX_Y_INDEX);
-        y1 = randYs[0];
-        y2 = randYs[1];
+        y = RANDOM_Y;
     }
 
     if (active)
     {
         EVERY_N_MILLISECONDS(5)
         {
-            leds[mapXYtoIndex(x1 + counter, y1)] = colour1;
-            leds[mapXYtoIndex(x1 - counter, y1)] = colour1;
+            leds[mapXYtoIndex(x1 + counter, y)] = colour1;
+            leds[mapXYtoIndex(x1 - counter, y)] = colour1;
 
-            leds[mapXYtoIndex(x2 + counter, y2)] = colour2;
-            leds[mapXYtoIndex(x2 - counter, y2)] = colour2;
+            leds[mapXYtoIndex(x2 + counter, y)] = colour2;
+            leds[mapXYtoIndex(x2 - counter, y)] = colour2;
 
-            if (++counter > NUMBER_X_LEDS / 2)
+            if (++counter > NUMBER_X_LEDS / 4 + (NUMBER_X_LEDS % 4 != 0))
             {
                 active = false;
                 counter = 0;
@@ -606,10 +612,10 @@ void twinkle()
     fadeLeds(20);
     EVERY_N_MILLIS(20)
     {
-        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = colour1;
-        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = colour2;
-        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = colour3;
-        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = colour1;
+        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = getRandomColourChoice();
+        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = getRandomColourChoice();
+        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = getRandomColourChoice();
+        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = getRandomColourChoice();
     }
 }
 
