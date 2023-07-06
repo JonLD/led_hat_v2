@@ -37,6 +37,8 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     Serial.println(radioData.effect);
     Serial.print("Colour enum: ");
     Serial.println(radioData.colour);
+    Serial.print("Ambient override: ");
+    Serial.println(radioData.ambientOverride);
     Serial.println();
 }
 
@@ -162,6 +164,10 @@ void playSelectedEffect()
     case Effect::random_cross:
         PLAY_EFFECT_SEQUENCE(random_cross);
         return;
+    case Effect::horizontal_ray:
+        PLAY_EFFECT_SEQUENCE(horizontal_ray);
+        return;
+    case Effect::strobe:
         PLAY_EFFECT_SEQUENCE(strobe_);
         return;
     case Effect::wave_anticlockwise:
@@ -247,6 +253,10 @@ void loop()
     Serial.print(micros() - initialMicros);
 #endif
     detectBeat();
+    if (radioData.ambientOverride)
+    {
+        isBeatDetected = false;
+    }
     effectSelectionEngine();
     playSelectedEffect();
 #ifdef PRINT_PROFILING

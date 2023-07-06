@@ -62,12 +62,12 @@ uint32_t Wheel(byte WheelPos)
 
 void setColorOrEffect(int keypadButtonNumber)
 {
-    if (keypadButtonNumber < 16)
+    if (keypadButtonNumber <= MAX_COLOUR_KEYPAD_INDEX)
     {
         radioData.isEffectCommand = false;
         radioData.colour = keypadButtonNumber;
     }
-    else if (keypadButtonNumber < 35)
+    else if (keypadButtonNumber <= MAX_EFFECT_KEYPAD_INDEX)
     {
         radioData.isEffectCommand = true;
         radioData.effect = keypadButtonNumber;
@@ -82,6 +82,10 @@ TrellisCallback blink(keyEvent evt)
         trellis.setPixelColor(evt.bit.NUM, Wheel(map(evt.bit.NUM, 0, X_DIM * Y_DIM,
                                                      0, 255))); // on rising
         setColorOrEffect(evt.bit.NUM);
+        if (evt.bit.NUM == AMBIENT_OVERRIDE_KEYPAD_INDEX)
+        {
+            radioData.ambientOverride = radioData.ambientOverride ? false : true;
+        }
     }
     else if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_FALLING)
     {
@@ -166,6 +170,8 @@ void trySend()
             Serial.println(radioData.effect);
             Serial.print("Colour enum: ");
             Serial.println(radioData.colour);
+            Serial.print("Ambient override: ");
+            Serial.println(radioData.ambientOverride);
             oldRadioData = radioData;
         }
         else
