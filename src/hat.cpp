@@ -125,12 +125,12 @@ void effectSelectionEngine()
     if (isBeatDetected && isAmbientSection)
     {
         isAmbientSection = false;
-        currentEffect = static_cast<Effect>(beatEffectEnumValues[random(size(beatEffectEnumValues))]);
+        currentEffect = beatEffectEnumValues[random(size(beatEffectEnumValues))];
     }
     else if (millis() - lastBeatTime_ms > AMBIENT_EFFECT_TIMEOUT_MS && !isAmbientSection)
     {
         isAmbientSection = true;
-        currentEffect = static_cast<Effect>(ambientEffectEnumValues[random(size(ambientEffectEnumValues))]);
+        currentEffect = ambientEffectEnumValues[random(size(ambientEffectEnumValues))];
     }
     // TODO: seems to be a bit broken with this
     // else if (millis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)

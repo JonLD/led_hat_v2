@@ -33,14 +33,25 @@ enum class Effect : int8_t
     // Strobe >:D
     strobe = 24,
     // Ambient effects
-    wave_anticlockwise = 32,
-    wave_clockwise = 33,
-    twinkle = 34,
-    no_effect = 35,
+    wave_anticlockwise = 31,
+    wave_clockwise = 32,
+    twinkle = 33,
+    no_effect = 34,
 };
 
-const int8_t beatEffectEnumValues[] = {16, 17, 18, 19, 20, 21};
-const int8_t ambientEffectEnumValues[] = {32, 33, 34};
+const Effect beatEffectEnumValues[] = {
+    Effect::wave_flash_double,
+    Effect::vertical_bars_clockwise,
+    Effect::wave_up,
+    Effect::wave_down,
+    Effect::wave_up_down,
+    Effect::random_cross,
+};
+const Effect ambientEffectEnumValues[] = {
+    Effect::wave_anticlockwise,
+    Effect::wave_clockwise,
+    Effect::twinkle,
+};
 
 typedef struct radioData_t
 {
