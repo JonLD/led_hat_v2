@@ -28,15 +28,17 @@ enum class Colour : int8_t
 enum class Effect : int8_t
 {
     // Beat effects
-    wave_flash_double = 16,
-    vertical_bars_clockwise = 17,
-    wave_up = 18,
-    wave_down = 19,
-    wave_up_down = 20,
-    random_cross = 21,
-    horizontal_ray = 22,
+    wave_bars = 16,
+    vertical_bars = 17,
+    vertical_bars_clockwise = 18,
+    vertical_bars_anticlockwise = 19,
+    wave_up = 20,
+    wave_up_down = 21,
+    random_cross = 22,
+    horizontal_ray = 23,
+    // ray_cross = 24,
     // Strobe >:D
-    strobe = 24,
+    // strobe = 25,
     // Ambient effects
     wave_anticlockwise = 27,
     wave_clockwise = 28,
@@ -45,13 +47,17 @@ enum class Effect : int8_t
 };
 
 const Effect beatEffectEnumValues[] = {
-    Effect::wave_flash_double,
+    Effect::wave_bars,
+    Effect::vertical_bars,
     Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_anticlockwise,
     Effect::wave_up,
-    Effect::wave_down,
     Effect::wave_up_down,
     Effect::random_cross,
+    Effect::random_cross,
     Effect::horizontal_ray,
+    Effect::horizontal_ray,
+    // Effect::ray_cross,
 };
 const Effect ambientEffectEnumValues[] = {
     Effect::wave_anticlockwise,
@@ -82,7 +88,7 @@ typedef struct radioData_t
 
 radioData_t radioData = {
     .isEffectCommand = false,
-    .effect = static_cast<int8_t>(Effect::wave_flash_double),
+    .effect = static_cast<int8_t>(Effect::wave_bars),
     .colour = static_cast<int8_t>(Colour::blue),
     .brightness = 135,
     .beatLength_ms = 483,

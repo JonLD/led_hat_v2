@@ -146,17 +146,20 @@ void playSelectedEffect()
 {
     switch (currentEffect)
     {
-    case Effect::wave_flash_double:
-        PLAY_EFFECT_SEQUENCE(wave_flash_double);
+    case Effect::wave_bars:
+        PLAY_EFFECT_SEQUENCE(wave_bars);
+        return;
+    case Effect::vertical_bars:
+        PLAY_EFFECT_SEQUENCE(vertical_bars);
         return;
     case Effect::vertical_bars_clockwise:
         PLAY_EFFECT_SEQUENCE(vertical_bars_clockwise);
         return;
+    case Effect::vertical_bars_anticlockwise:
+        PLAY_EFFECT_SEQUENCE(vertical_bars_anticlockwise);
+        return;
     case Effect::wave_up:
         PLAY_EFFECT_SEQUENCE(wave_up);
-        return;
-    case Effect::wave_down:
-        PLAY_EFFECT_SEQUENCE(wave_down);
         return;
     case Effect::wave_up_down:
         PLAY_EFFECT_SEQUENCE(wave_up_down);
@@ -167,9 +170,12 @@ void playSelectedEffect()
     case Effect::horizontal_ray:
         PLAY_EFFECT_SEQUENCE(horizontal_ray);
         return;
-    case Effect::strobe:
-        PLAY_EFFECT_SEQUENCE(strobe_);
-        return;
+    // case Effect::ray_cross:
+    //     PLAY_EFFECT_SEQUENCE(ray_cross);
+    //     return;
+    // case Effect::strobe:
+    //     PLAY_EFFECT_SEQUENCE(strobe_);
+    //     return;
     case Effect::wave_anticlockwise:
         PLAY_EFFECT_SEQUENCE(wave_anticlockwise);
         return;
@@ -220,7 +226,10 @@ void loop()
     if (radioData.isEffectCommand)
     {
         radioData.isEffectCommand = false;
-        currentEffect = static_cast<Effect>(radioData.effect);
+        if (!(radioData.effect == 24 || radioData.effect == 25 || radioData.effect == 26))
+        {
+            currentEffect = static_cast<Effect>(radioData.effect);
+        }
     }
     else
     {

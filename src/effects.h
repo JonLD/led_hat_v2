@@ -32,56 +32,37 @@ effect_array_t wave_anticlockwise = {waveAnticlockwise};
 effect_array_t strobe_ = {strobe};
 
 //-------------- Beat effect arrays --------------
-void verticalBars();
+void verticalBarsClockwise();
+void verticalBarsAnticlockwise();
 void waveUp();
 void waveDown();
 void randomCross();
 void horizontalRay();
 
+effect_array_t vertical_bars = {
+    verticalBarsClockwise,
+    verticalBarsClockwise,
+    verticalBarsAnticlockwise,
+    verticalBarsAnticlockwise,
+};
 effect_array_t vertical_bars_clockwise = {
-    verticalBars,
+    verticalBarsClockwise,
+};
+effect_array_t vertical_bars_anticlockwise = {
+    verticalBarsAnticlockwise,
 };
 effect_array_t wave_up = {
     waveUp,
 };
-effect_array_t wave_down = {
-    waveDown,
-};
 effect_array_t wave_up_down = {
-    waveDown,
     waveUp,
+    waveDown,
 };
-effect_array_t wave_flash_double = {
+effect_array_t wave_bars = {
     waveUp,
     waveUp,
-    verticalBars,
-    verticalBars,
-};
-effect_array_t eigh_wave_eight_bars = {
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
+    verticalBarsClockwise,
+    verticalBarsClockwise,
 };
 effect_array_t random_cross = {
     randomCross,
@@ -89,6 +70,12 @@ effect_array_t random_cross = {
 effect_array_t horizontal_ray = {
     horizontalRay,
 };
+// effect_array_t ray_cross = {
+//     horizontalRay,
+//     horizontalRay,
+//     randomCross,
+//     randomCross,
+// };
 
 // ----- Effect utils -----
 
@@ -306,7 +293,7 @@ void waveDown()
 
 // 2
 // Flash LED and decay to 0
-void verticalBars()
+void verticalBarsClockwise()
 {
     if (isBeatDetected)
     {
@@ -316,6 +303,24 @@ void verticalBars()
             for (int y = 0; y <= MAX_Y_INDEX; y++)
             { // fill y
                 leds[mapXYtoIndex(x, y)] = colour1;
+            }
+        }
+        FastLED.show();
+        xStart = (xStart == 3) ? (xStart - 2) : ++xStart;
+    }
+    fadeLeds(100);
+}
+
+void verticalBarsAnticlockwise()
+{
+    if (isBeatDetected)
+    {
+        static int xStart = 0;
+        for (int x = xStart; x <= MAX_X_INDEX; x += 3)
+        { // fill x
+            for (int y = 0; y <= MAX_Y_INDEX; y++)
+            { // fill y
+                leds[mapXYtoIndex(-x, y)] = colour1;
             }
         }
         FastLED.show();
