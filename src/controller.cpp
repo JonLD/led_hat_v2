@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_NeoTrellis.h>
+#include <config.h>
 
 uint8_t com8Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xE6, 0x40};
 uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
@@ -174,16 +175,50 @@ void trySend()
     }
 }
 
+// ----- Brightness knob -----
+const uint8_t BRIGHTNESS_LIMIT = 255;
+
+void pollBrightnessKnob() {
+  static uint8_t brightness_pin_a_current = HIGH;
+  static uint8_t brightness_pin_a_previous = brightness_pin_a_current;
+
+    /*BRIGHTNESS_RE_PIN_A and BRIGHTNESS_RE_PIN_B both defualt to HIGH
+    On rotation both pass through LOW to HIGH*/
+    brightness_pin_a_current = digitalRead(BRIGHTNESS_RE_PIN_A);
+
+    if ((brightness_pin_a_previous == LOW) &&
+        (brightness_pin_a_current == HIGH)) {
+      // if counter clockwise BRIGHTNESS_RE_PIN_B returns to HIGH before
+      // BRIGHTNESS_RE_PIN_A and so will be HIGH
+      if ((digitalRead(BRIGHTNESS_RE_PIN_B) == HIGH) &&
+          (radioData.brightness >= 3)) {
+        radioData.brightness -= 3;
+        Serial.println(radioData.brightness);
+      }
+      // if clockwise BRIGHTNESS_RE_PIN_B returns to HIGH after
+      // BRIGHTNESS_RE_PIN_A and thus will still be low
+      else if ((digitalRead(BRIGHTNESS_RE_PIN_B) == LOW) &&
+               (radioData.brightness <= (BRIGHTNESS_LIMIT - 3))) {
+        radioData.brightness += 3;
+        Serial.println(radioData.brightness);
+      }
+    }
+    brightness_pin_a_previous = brightness_pin_a_current;
+}
+
 void setup()
 {
     Serial.begin(115200);
     Serial.println("Setting up devic");
     setupWifiConnection();
     setupTrellisKeypad();
+    pinMode(BRIGHTNESS_RE_PIN_A, INPUT_PULLUP);
+    pinMode(BRIGHTNESS_RE_PIN_B, INPUT_PULLUP);
 }
 
 void loop()
 {
     trellis.read();
+    pollBrightnessKnob();
     trySend();
 }

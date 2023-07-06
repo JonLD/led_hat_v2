@@ -260,6 +260,7 @@ void loop()
             setEffectColour();
         }
     }
+    FastLED.setBrightness(radioData.brightness);
 #ifdef PRINT_PROFILING
     Serial.print(" Set colour: ");
     Serial.print(micros() - initialMicros);
