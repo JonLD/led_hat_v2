@@ -260,6 +260,13 @@ void loop()
             setEffectColour();
         }
     }
+    static uint8_t lastBrightness = radioData.brightness;
+    if (radioData.brightness != lastBrightness)
+    {
+        FastLED.setBrightness(radioData.brightness);
+        lastBrightness = radioData.brightness;
+        Serial.println("setting new brightness");
+    }
 #ifdef PRINT_PROFILING
     Serial.print(" Set colour: ");
     Serial.print(micros() - initialMicros);
@@ -371,7 +378,7 @@ void waveUp()
             y -= 1;
         }
     }
-    fadeLeds(100);
+    fadeLeds(40);
 }
 
 void waveClockwise()
@@ -408,7 +415,7 @@ void waveClockwise()
     {
         x = 0;
     }
-    fadeLeds(100);
+    fadeLeds(30);
 }
 
 void waveAnticlockwise()
@@ -445,7 +452,7 @@ void waveAnticlockwise()
     {
         x = MAX_X_INDEX;
     }
-    fadeLeds(100);
+    fadeLeds(40);
 }
 
 void waveDown()

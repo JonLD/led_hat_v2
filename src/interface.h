@@ -60,7 +60,7 @@ radioData_t radioData = {
     .isEffectCommand = false,
     .effect = static_cast<int8_t>(Effect::wave_flash_double),
     .colour = static_cast<int8_t>(Colour::blue),
-    .brightness = 255,
+    .brightness = 135,
     .beatLength_ms = 483,
     .shouldAttemptResync = false,
 };
