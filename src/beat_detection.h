@@ -1,3 +1,6 @@
+#ifndef BEAT_DETECTION_H
+#define BEAT_DETECTION_H
+
 #include <driver/i2s.h>
 // #define FFT_SQRT_APPROXIMATION
 #include "arduinoFFT.h"
@@ -17,10 +20,10 @@
 // #define PRINT_NOT_BEAT_DETECTED_REASON
 // #define PRINT_CURRENT_BASS_MAG
 
-const uint16_t numberOfSamples = 512;     // This value MUST ALWAYS be a power of 2
+const uint16_t numberOfSamples = 512; // This value MUST ALWAYS be a power of 2
 const uint32_t samplingFrequency = 25000;
 
-float lastBeatTime_ms = 0;
+unsigned long lastBeatTime_ms = 0;
 bool isBeatDetected = false;
 unsigned long initialMicros;
 
@@ -142,9 +145,7 @@ void analyzeFrequencyBand(freqBandData_t *freqBand)
     freqBand->currentMagnitude /= numberOfBins;
 
     // Calulate leaky average
-    freqBand->averageMagnitude += (
-        (freqBand->currentMagnitude - freqBand->averageMagnitude) * (freqBand->leakyAverageCoeff)
-    );
+    freqBand->averageMagnitude += (freqBand->currentMagnitude - freqBand->averageMagnitude) * (freqBand->leakyAverageCoeff);
 }
 
 void detectBeat()
@@ -157,15 +158,14 @@ void detectBeat()
     const double proportionBassAboveAvg = proportionOfMagAboveAvg(bassFreqData);
     const double proportionMidAboveAvg = proportionOfMagAboveAvg(midFreqData);
 
-    isBeatDetected = (
-        !isRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg
-    );
+    isBeatDetected = (!isRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg);
 
 #ifdef PRINT_CURRENT_BASS_MAG
     Serial.println(bassFreqData.currentMagnitude);
 #endif
 #ifdef PRINT_NOT_BEAT_DETECTED_REASON
-    if (!isRecentBeat){
+    if (!isRecentBeat)
+    {
         if (isBassAboveAvg && peakIsBass)
         {
             Serial.println("isAvgBassAboveMin");
@@ -178,10 +178,9 @@ void detectBeat()
         {
             Serial.println("isBassAboveAvg");
         }
-        
-
     }
-    if (isBeatDetectedisBeatDetected){
+    if (isBeatDetectedisBeatDetected)
+    {
         Serial.print("\n");
         Serial.println("isBeatDetectedisBeatDetected");
         Serial.print("\n");
@@ -198,18 +197,15 @@ void detectBeat()
     }
 }
 
-
 bool isMagAboveThreshold(freqBandData_t freqBandData)
 {
-    const bool magIsAboveThreshold = (
-        bassFreqData.currentMagnitude > (bassFreqData.averageMagnitude * bassFreqData.beatDetectThresholdCoeff)
-    );
+    const bool magIsAboveThreshold = (bassFreqData.currentMagnitude > (bassFreqData.averageMagnitude * bassFreqData.beatDetectThresholdCoeff));
     return magIsAboveThreshold;
 }
 
 double proportionOfMagAboveAvg(freqBandData_t freqBandData)
 {
-    const double proportionAboveAvg = (bassFreqData.currentMagnitude /bassFreqData.averageMagnitude);
+    const double proportionAboveAvg = (bassFreqData.currentMagnitude / bassFreqData.averageMagnitude);
     return proportionAboveAvg;
 }
 
@@ -240,3 +236,5 @@ void PrintVector(double *vData, uint16_t bufferSize, uint8_t scaleType)
     }
     Serial.println();
 }
+
+#endif

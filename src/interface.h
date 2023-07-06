@@ -1,3 +1,6 @@
+#ifndef INTERFACE_H
+#define INTERFACE_H
+
 enum class Colour : int8_t
 {
     // Colours
@@ -23,17 +26,21 @@ enum class Effect : int8_t
     // Beat effects
     wave_flash_double = 16,
     vertical_bars_clockwise = 17,
-    just_wave_up = 18,
-    just_wave_down = 19,
-    horizontal_bars = 20,
+    wave_up = 18,
+    wave_down = 19,
+    wave_up_down = 20,
+    random_cross = 21,
     // Strobe >:D
     strobe = 24,
     // Ambient effects
     wave_anticlockwise = 32,
     wave_clockwise = 33,
     twinkle = 34,
-    noEffect = 35,
+    no_effect = 35,
 };
+
+const int8_t beatEffectEnumValues[] = {16, 17, 18, 19, 20, 21};
+const int8_t ambientEffectEnumValues[] = {32, 33, 34};
 
 typedef struct radioData_t
 {
@@ -64,3 +71,5 @@ radioData_t radioData = {
     .beatLength_ms = 483,
     .shouldAttemptResync = false,
 };
+
+#endif
