@@ -1,6 +1,10 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#define MAX_COLOUR_KEYPAD_INDEX 15
+#define MAX_EFFECT_KEYPAD_INDEX 30
+#define AMBIENT_OVERRIDE_KEYPAD_INDEX 31
+
 enum class Colour : int8_t
 {
     // Colours
@@ -30,17 +34,30 @@ enum class Effect : int8_t
     wave_down = 19,
     wave_up_down = 20,
     random_cross = 21,
+    horizontal_ray = 22,
     // Strobe >:D
     strobe = 24,
     // Ambient effects
-    wave_anticlockwise = 32,
-    wave_clockwise = 33,
-    twinkle = 34,
-    no_effect = 35,
+    wave_anticlockwise = 27,
+    wave_clockwise = 28,
+    twinkle = 29,
+    no_effect = 30,
 };
 
-const int8_t beatEffectEnumValues[] = {16, 17, 18, 19, 20, 21};
-const int8_t ambientEffectEnumValues[] = {32, 33, 34};
+const Effect beatEffectEnumValues[] = {
+    Effect::wave_flash_double,
+    Effect::vertical_bars_clockwise,
+    Effect::wave_up,
+    Effect::wave_down,
+    Effect::wave_up_down,
+    Effect::random_cross,
+    Effect::horizontal_ray,
+};
+const Effect ambientEffectEnumValues[] = {
+    Effect::wave_anticlockwise,
+    Effect::wave_clockwise,
+    Effect::twinkle,
+};
 
 typedef struct radioData_t
 {
@@ -49,7 +66,7 @@ typedef struct radioData_t
     int8_t colour;
     uint8_t brightness;
     uint16_t beatLength_ms;
-    bool shouldAttemptResync;
+    bool ambientOverride;
 
     bool operator==(const radioData_t &other) const
     {
@@ -59,7 +76,7 @@ typedef struct radioData_t
             colour == other.colour &&
             brightness == other.brightness &&
             beatLength_ms == other.beatLength_ms &&
-            shouldAttemptResync == other.shouldAttemptResync);
+            ambientOverride == other.ambientOverride);
     }
 } radioData_s;
 
@@ -69,7 +86,7 @@ radioData_t radioData = {
     .colour = static_cast<int8_t>(Colour::blue),
     .brightness = 135,
     .beatLength_ms = 483,
-    .shouldAttemptResync = false,
+    .ambientOverride = false,
 };
 
 #endif

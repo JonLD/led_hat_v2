@@ -62,12 +62,12 @@ uint32_t Wheel(byte WheelPos)
 
 void setColorOrEffect(int keypadButtonNumber)
 {
-    if (keypadButtonNumber <= 16)
+    if (keypadButtonNumber <= MAX_COLOUR_KEYPAD_INDEX)
     {
         radioData.isEffectCommand = false;
         radioData.colour = keypadButtonNumber;
     }
-    else if (keypadButtonNumber <= 21)
+    else if (keypadButtonNumber <= MAX_EFFECT_KEYPAD_INDEX)
     {
         radioData.isEffectCommand = true;
         radioData.effect = keypadButtonNumber;
@@ -82,6 +82,10 @@ TrellisCallback blink(keyEvent evt)
         trellis.setPixelColor(evt.bit.NUM, Wheel(map(evt.bit.NUM, 0, X_DIM * Y_DIM,
                                                      0, 255))); // on rising
         setColorOrEffect(evt.bit.NUM);
+        if (evt.bit.NUM == AMBIENT_OVERRIDE_KEYPAD_INDEX)
+        {
+            radioData.ambientOverride = radioData.ambientOverride ? false : true;
+        }
     }
     else if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_FALLING)
     {
@@ -166,6 +170,8 @@ void trySend()
             Serial.println(radioData.effect);
             Serial.print("Colour enum: ");
             Serial.println(radioData.colour);
+            Serial.print("Ambient override: ");
+            Serial.println(radioData.ambientOverride);
             oldRadioData = radioData;
         }
         else
@@ -178,30 +184,34 @@ void trySend()
 // ----- Brightness knob -----
 const uint8_t BRIGHTNESS_LIMIT = 255;
 
-void pollBrightnessKnob() {
-  static uint8_t brightness_pin_a_current = HIGH;
-  static uint8_t brightness_pin_a_previous = brightness_pin_a_current;
+void pollBrightnessKnob()
+{
+    static uint8_t brightness_pin_a_current = HIGH;
+    static uint8_t brightness_pin_a_previous = brightness_pin_a_current;
 
     /*BRIGHTNESS_RE_PIN_A and BRIGHTNESS_RE_PIN_B both defualt to HIGH
     On rotation both pass through LOW to HIGH*/
     brightness_pin_a_current = digitalRead(BRIGHTNESS_RE_PIN_A);
 
     if ((brightness_pin_a_previous == LOW) &&
-        (brightness_pin_a_current == HIGH)) {
-      // if counter clockwise BRIGHTNESS_RE_PIN_B returns to HIGH before
-      // BRIGHTNESS_RE_PIN_A and so will be HIGH
-      if ((digitalRead(BRIGHTNESS_RE_PIN_B) == HIGH) &&
-          (radioData.brightness >= 3)) {
-        radioData.brightness -= 3;
-        Serial.println(radioData.brightness);
-      }
-      // if clockwise BRIGHTNESS_RE_PIN_B returns to HIGH after
-      // BRIGHTNESS_RE_PIN_A and thus will still be low
-      else if ((digitalRead(BRIGHTNESS_RE_PIN_B) == LOW) &&
-               (radioData.brightness <= (BRIGHTNESS_LIMIT - 3))) {
-        radioData.brightness += 3;
-        Serial.println(radioData.brightness);
-      }
+        (brightness_pin_a_current == HIGH))
+    {
+        // if counter clockwise BRIGHTNESS_RE_PIN_B returns to HIGH before
+        // BRIGHTNESS_RE_PIN_A and so will be HIGH
+        if ((digitalRead(BRIGHTNESS_RE_PIN_B) == HIGH) &&
+            (radioData.brightness >= 3))
+        {
+            radioData.brightness -= 3;
+            Serial.println(radioData.brightness);
+        }
+        // if clockwise BRIGHTNESS_RE_PIN_B returns to HIGH after
+        // BRIGHTNESS_RE_PIN_A and thus will still be low
+        else if ((digitalRead(BRIGHTNESS_RE_PIN_B) == LOW) &&
+                 (radioData.brightness <= (BRIGHTNESS_LIMIT - 3)))
+        {
+            radioData.brightness += 3;
+            Serial.println(radioData.brightness);
+        }
     }
     brightness_pin_a_previous = brightness_pin_a_current;
 }
