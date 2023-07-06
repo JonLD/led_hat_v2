@@ -126,17 +126,17 @@ void effectSelectionEngine()
     {
         isAmbientSection = false;
         currentEffect = static_cast<Effect>(beatEffectEnumValues[random(size(beatEffectEnumValues))]);
-        return;
     }
-    if (((millis() - lastBeatTime_ms) > AMBIENT_EFFECT_TIMEOUT_MS) && !isAmbientSection)
+    else if (millis() - lastBeatTime_ms > AMBIENT_EFFECT_TIMEOUT_MS && !isAmbientSection)
     {
-        currentEffect = static_cast<Effect>(ambientEffectEnumValues[random(size(ambientEffectEnumValues))]);
         isAmbientSection = true;
+        currentEffect = static_cast<Effect>(ambientEffectEnumValues[random(size(ambientEffectEnumValues))]);
     }
-    else if (millis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)
-    {
-        currentEffect = static_cast<Effect>(beatEffectEnumValues[random(size(beatEffectEnumValues))]);
-    }
+    // TODO: seems to be a bit broken with this
+    // else if (millis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)
+    // {
+    //     currentEffect = static_cast<Effect>(beatEffectEnumValues[random(size(beatEffectEnumValues))]);
+    // }
 }
 
 // logic for selection of next pre-set effect

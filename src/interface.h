@@ -39,7 +39,7 @@ enum class Effect : int8_t
     no_effect = 35,
 };
 
-const int8_t beatEffectEnumValues[] = {16, 17, 18, 21};
+const int8_t beatEffectEnumValues[] = {16, 17, 18, 19, 20, 21};
 const int8_t ambientEffectEnumValues[] = {32, 33, 34};
 
 typedef struct radioData_t
