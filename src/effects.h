@@ -25,11 +25,12 @@ void strobe();
 void waveClockwise();
 void waveAnticlockwise();
 
-effect_array_t no_effect = {noEffect};
-effect_array_t twinkle_ = {twinkle};
-effect_array_t wave_clockwise = {waveClockwise};
-effect_array_t wave_anticlockwise = {waveAnticlockwise};
-effect_array_t strobe_ = {strobe};
+
+Effect no_effect[] = {Effect::no_effect};
+Effect twinkle_[] = {Effect::twinkle};
+Effect wave_clockwise[] = {Effect::wave_clockwise};
+Effect wave_anticlockwise[] = {Effect::wave_anticlockwise};
+Effect strobe_[] = {Effect::strobe};
 
 //-------------- Beat effect arrays --------------
 void verticalBars();
@@ -38,56 +39,57 @@ void waveDown();
 void randomCross();
 void horizontalRay();
 
-effect_array_t vertical_bars_clockwise = {
-    verticalBars,
+Effect vertical_bars_clockwise[] = {
+    Effect::vertical_bars_clockwise,
 };
-effect_array_t wave_up = {
-    waveUp,
+Effect wave_up[] = {
+    Effect::wave_up
 };
-effect_array_t wave_down = {
-    waveDown,
+Effect wave_down[] = {
+    Effect::wave_down
 };
-effect_array_t wave_up_down = {
-    waveDown,
-    waveUp,
+Effect wave_up_down[] = {
+    Effect::wave_down,
+    Effect::wave_up
 };
-effect_array_t wave_flash_double = {
-    waveUp,
-    waveUp,
-    verticalBars,
-    verticalBars,
+Effect wave_flash_double[] = {
+    Effect::wave_up,
+    Effect::wave_up,
+    Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_clockwise
 };
-effect_array_t eigh_wave_eight_bars = {
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
+Effect eigh_wave_eight_bars[] = {
+    Effect::wave_up,
+    Effect::wave_up,
+    Effect::wave_up,
+    Effect::wave_up,
+    Effect::wave_up,
+    Effect::wave_up,
+    Effect::wave_up,
+    Effect::wave_up,
+    Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_clockwise,
+    Effect::vertical_bars_clockwise,
+    Effect::wave_down,
+    Effect::wave_down,
+    Effect::wave_down,
+    Effect::wave_down,
+    Effect::wave_down,
+    Effect::wave_down,
+    Effect::wave_down,
+    Effect::wave_down,
+    Effect::wave_down
 };
-effect_array_t random_cross = {
-    randomCross,
+Effect random_cross[] = {
+    Effect::random_cross,
 };
-effect_array_t horizontal_ray = {
-    horizontalRay,
+Effect horizontal_ray[] = {
+    Effect::horizontal_ray,
 };
 
 // ----- Effect utils -----
@@ -150,12 +152,12 @@ CRGB getRandomColourChoice()
 
 // ----- Effect functions -----
 
+
 void noEffect()
 {
     fadeLeds(100);
 }
 
-// 1
 void waveUp()
 {
     static int16_t y = -1;
@@ -304,7 +306,6 @@ void waveDown()
     fadeLeds(100);
 }
 
-// 2
 // Flash LED and decay to 0
 void verticalBars()
 {

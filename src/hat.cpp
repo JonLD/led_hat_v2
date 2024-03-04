@@ -15,17 +15,10 @@ uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
 #define COLOR_ORDER GRB
 #define LED_DATA_PIN 22
 
-#define PLAY_EFFECT_SEQUENCE(effect) play_effect_sequence(effect, size(effect))
-
 Colour currentColour = static_cast<Colour>(radioData.colour);
 Effect currentEffect = static_cast<Effect>(radioData.effect);
 
-// for getting the length of the above effect function pointer arrays
-template <class T, size_t N>
-constexpr size_t size(T (&)[N])
-{
-    return N;
-}
+#define _countof(x) (sizeof(x) / sizeof (x[0]))
 
 // callback function that will be executed when data is received
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
@@ -109,14 +102,52 @@ void setEffectColour()
     }
 }
 
-void play_effect_sequence(effect_array_t effects_array, size_t array_size)
+void loopThroughEffectSequence(Effect effect_sequence[])
 {
     static int i = 0;
-    if (isBeatDetected && ++i >= array_size)
+    if (isBeatDetected)
     {
-        i = 0;
+        if (++i >= _countof(effect_sequence))
+        {
+            i = 0;
+        }
     }
-    effects_array[i]();
+    switch (effect_sequence[i])
+    {
+    case Effect::clear_display:
+        FastLED.clear();
+        break;
+    case Effect::wave_up:
+        waveUp();
+        break;
+    case Effect::wave_down:
+        waveDown();
+        break;
+    case Effect::vertical_bars_clockwise:
+        verticalBars();
+        break;
+    case Effect::random_cross:
+        randomCross();
+        break;
+    case Effect::horizontal_ray:
+        horizontalRay();
+        break;
+    case Effect::twinkle:
+        twinkle();
+        break;
+    case Effect::wave_anticlockwise:
+        waveAnticlockwise();
+        break;
+    case Effect::wave_clockwise:
+        waveClockwise();
+        break;
+    case Effect::strobe:
+        strobe();
+        break;
+    case Effect::no_effect:
+        noEffect();
+        break;
+    }
 }
 
 #define AMBIENT_EFFECT_TIMEOUT_MS 1000
@@ -127,60 +158,60 @@ void effectSelectionEngine()
     if (isBeatDetected && isAmbientSection)
     {
         isAmbientSection = false;
-        currentEffect = beatEffectEnumValues[random(size(beatEffectEnumValues))];
+        currentEffect = beatEffectEnumValues[random(_countof(beatEffectEnumValues))];
     }
     else if (millis() - lastBeatTime_ms > AMBIENT_EFFECT_TIMEOUT_MS && !isAmbientSection)
     {
         isAmbientSection = true;
-        currentEffect = ambientEffectEnumValues[random(size(ambientEffectEnumValues))];
+        currentEffect = ambientEffectEnumValues[random(_countof(ambientEffectEnumValues))];
     }
     // TODO: seems to be a bit broken with this
     // else if (millis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)
     // {
-    //     currentEffect = static_cast<Effect>(beatEffectEnumValues[random(size(beatEffectEnumValues))]);
+    //     currentEffect = static_cast<Effect>(beatEffectEnumValues[random(_countof(beatEffectEnumValues))]);
     // }
 }
 
 // logic for selection of next pre-set effect
-void playSelectedEffect()
+void playSelectedEffectSequence()
 {
     switch (currentEffect)
     {
     case Effect::wave_flash_double:
-        PLAY_EFFECT_SEQUENCE(wave_flash_double);
+        loopThroughEffectSequence(wave_flash_double);
         return;
     case Effect::vertical_bars_clockwise:
-        PLAY_EFFECT_SEQUENCE(vertical_bars_clockwise);
+        loopThroughEffectSequence(vertical_bars_clockwise);
         return;
     case Effect::wave_up:
-        PLAY_EFFECT_SEQUENCE(wave_up);
+        loopThroughEffectSequence(wave_up);
         return;
     case Effect::wave_down:
-        PLAY_EFFECT_SEQUENCE(wave_down);
+        loopThroughEffectSequence(wave_down);
         return;
     case Effect::wave_up_down:
-        PLAY_EFFECT_SEQUENCE(wave_up_down);
+        loopThroughEffectSequence(wave_up_down);
         return;
     case Effect::random_cross:
-        PLAY_EFFECT_SEQUENCE(random_cross);
+        loopThroughEffectSequence(random_cross);
         return;
     case Effect::horizontal_ray:
-        PLAY_EFFECT_SEQUENCE(horizontal_ray);
+        loopThroughEffectSequence(horizontal_ray);
         return;
     case Effect::strobe:
-        PLAY_EFFECT_SEQUENCE(strobe_);
+        loopThroughEffectSequence(strobe_);
         return;
     case Effect::wave_anticlockwise:
-        PLAY_EFFECT_SEQUENCE(wave_anticlockwise);
+        loopThroughEffectSequence(wave_anticlockwise);
         return;
     case Effect::wave_clockwise:
-        PLAY_EFFECT_SEQUENCE(wave_clockwise);
+        loopThroughEffectSequence(wave_clockwise);
         return;
     case Effect::twinkle:
-        PLAY_EFFECT_SEQUENCE(twinkle_);
+        loopThroughEffectSequence(twinkle_);
         return;
     case Effect::no_effect:
-        PLAY_EFFECT_SEQUENCE(no_effect);
+        loopThroughEffectSequence(no_effect);
         return;
     }
     Serial.println("Effect not found!");
@@ -258,7 +289,7 @@ void loop()
         isBeatDetected = false;
     }
     effectSelectionEngine();
-    playSelectedEffect();
+    playSelectedEffectSequence();
 #ifdef PRINT_PROFILING
     Serial.print(" LED: ");
     Serial.println(micros() - initialMicros);

@@ -42,6 +42,7 @@ enum class Effect : int8_t
     wave_clockwise = 28,
     twinkle = 29,
     no_effect = 30,
+    clear_display
 };
 
 const Effect beatEffectEnumValues[] = {
