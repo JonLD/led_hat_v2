@@ -2,8 +2,10 @@
 #define BEAT_DETECTION_H
 
 #include <driver/i2s.h>
-// #define FFT_SQRT_APPROXIMATION
-#include "arduinoFFT.h"
+
+#define FFT_SQRT_APPROXIMATION
+#define FFT_SPEED_OVER_PRECISION
+#include <arduinoFFT.h>
 
 // you shouldn't need to change these settings
 #define I2S_MIC_CHANNEL I2S_CHANNEL_FMT_ONLY_RIGHT
@@ -12,7 +14,7 @@
 #define I2S_MIC_SERIAL_DATA GPIO_NUM_33
 
 #define BEAT_DEBOUNCE_DURATION_MS 200 // Debounce the beat
-#define MAX_BASS_FREQUENCY_HZ 140
+#define MAX_BASS_FREQUENCY_HZ 140.0f
 
 // Uncomment to enable print debugging (only enable one at a time)
 // #define PRINT_PROFILING
@@ -56,11 +58,11 @@ freqBandData_t midFreqData{
     .leakyAverageCoeff = 0.125,
     .minMagnitude = 200000000};
 
-double frequencyPeak_Hz;
+float frequencyPeak_Hz;
 
-double vImag[numberOfSamples] = {0};
-double vReal[numberOfSamples];
-arduinoFFT FFT = arduinoFFT(vReal, vImag, numberOfSamples, samplingFrequency); /* Create FFT object */
+float vImag[numberOfSamples] = {0};
+float vReal[numberOfSamples] = {0};
+ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, numberOfSamples, samplingFrequency, true);
 
 #define SCL_INDEX 0x00
 #define SCL_TIME 0x01
@@ -117,18 +119,17 @@ void readMicData()
     // dump the samples out to the serial channel.
     for (int i = 0; i < numberOfSamples; i++)
     {
-        vReal[i] = (double)rawMicSamples[i];
-        vImag[i] = 0;
+        vReal[i] = (float)rawMicSamples[i];
     }
 }
 
 void computeFFT()
 {
-    FFT.DCRemoval();
-    FFT.Windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
-    FFT.Compute(FFTDirection::Forward);
-    FFT.ComplexToMagnitude();
-    frequencyPeak_Hz = FFT.MajorPeak();
+    FFT.dcRemoval();
+    FFT.windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
+    FFT.compute(FFTDirection::Forward);
+    FFT.complexToMagnitude();
+    frequencyPeak_Hz = FFT.majorPeak();
     analyzeFrequencyBand(&bassFreqData);
     analyzeFrequencyBand(&midFreqData);
 }
