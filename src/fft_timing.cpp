@@ -1,4 +1,8 @@
 #include <Arduino.h>
+
+#define FFT_SQRT_APPROXIMATION
+#define FFT_SPEED_OVER_PRECISION
+
 #include "arduinoFFT.h"
 
 #define NUM_LOOPS_TO_MEASURE (5000u)
@@ -39,7 +43,7 @@ float frequencyPeak_Hz;
 
 float vImag[numberOfSamples] = {0};
 float vReal[numberOfSamples];
-ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, numberOfSamples, samplingFrequency); /* Create FFT object */
+ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, numberOfSamples, samplingFrequency, true); /* Create FFT object */
 
 void analyzeFrequencyBand(freqBandData_t *freqBand)
 {
