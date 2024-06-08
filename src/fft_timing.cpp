@@ -4,6 +4,7 @@
 #define FFT_SPEED_OVER_PRECISION
 
 #include "arduinoFFT.h"
+#include "dsps_fft2r.h"
 
 #define NUM_LOOPS_TO_MEASURE (5000u)
 
@@ -41,6 +42,8 @@ freqBandData_t midFreqData{
 
 float frequencyPeak_Hz;
 
+int16_t inputData[numberOfSamples * 2] = {0};
+
 float vImag[numberOfSamples] = {0};
 float vReal[numberOfSamples];
 ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, numberOfSamples, samplingFrequency, true); /* Create FFT object */
@@ -71,23 +74,56 @@ void computeFFT()
     analyzeFrequencyBand(&midFreqData);
 }
 
+const uint16_t minFreq = 1u;
+
+// Some inspiration taken from
+// https://stackoverflow.com/questions/78490683/esp32-fft-im-not-getting-the-correct-max-frequency-of-the-input-signal
+void newFft(void)
+{
+    dsps_fft2r_sc16_ae32(inputData, numberOfSamples);
+    dsps_bit_rev_sc16_ansi(inputData, numberOfSamples);
+    dsps_cplx2reC_sc16(inputData, numberOfSamples);
+
+    uint16_t maxIdx = 0u;
+    int16_t maxAmp = INT16_MIN;
+
+    for (uint32_t idx = 0u; idx < numberOfSamples; idx++)
+    {
+        if (inputData[idx] > minFreq && inputData[idx] > maxAmp)
+        {
+            maxIdx = idx;
+            maxAmp = inputData[idx];
+        }
+    }
+    frequencyPeak_Hz = (float)maxIdx * (float)samplingFrequency / (float)numberOfSamples;
+
+    // Leave these in to make numbers comparable, even though they're operating on a different vector
+    analyzeFrequencyBand(&bassFreqData);
+    analyzeFrequencyBand(&midFreqData);
+}
+
 void setup()
 {
     Serial.begin(115200);
+    dsps_fft2r_init_sc16(NULL, 1024); // Allow a 1k buffer for sin/cos tables TODO decide how big this should actually be (maybe very small?)
 }
 
 // Make some "real" (i.e. nonzero) data for the FFT to operate on.
 // Slow, messy, and hacky, but adequate
 void generateData()
 {
-    const float first = (float)random();
-    const float second = (float)random();
-    const float third = (float)random();
-    const float fourth = (float)random();
+    const float first = (float)random(1, 100) / 100.0;
+    const float second = (float)random(1, 100) / 100.0;
+    const float third = (float)random(1, 100) / 100.0;
+    const float fourth = (float)random(1, 100) / 100.0;
+
+    // Serial.printf("Using %.3fsin(%.3fx) + %.3fsin(%.3fx)\n", first, second, third, fourth);
 
     for (uint32_t idx = 0u; idx < numberOfSamples; idx++)
     {
-        vReal[idx] = first * sin(second * (float)idx) + third * sin(fourth * (float)idx);
+        const float val = first * sin(second * (float)idx) + third * sin(fourth * (float)idx);
+        vReal[idx] = val;
+        inputData[idx * 2] = (int16_t)(val * (float)INT16_MAX / (first + third));
     }
 }
 
@@ -98,7 +134,8 @@ void loop()
     generateData();
 
     const int64_t startMicros = esp_timer_get_time();
-    computeFFT();
+    // computeFFT();
+    newFft();
     const int64_t endMicros = esp_timer_get_time();
     const int64_t elapsed = endMicros - startMicros;
 

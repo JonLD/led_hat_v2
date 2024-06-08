@@ -27,11 +27,13 @@ def main(filename):
     file_contents = get_monitor_file(filename)
     micros = extract_file_contents(file_contents)
 
-    fig, ax = plt.subplots(1, 1, figsize=(16, 9))
+    fig, ax = plt.subplots(1, 1, figsize=(16, 7))
     ax.hist(micros, bins=100)
 
-    fig, ax = plt.subplots(1, 1, figsize=(16, 9))
-    ax.set_ylabel("micros")
+    fig, ax = plt.subplots(1, 1, figsize=(16, 7))
+    ax.set_title("Performance with fixed point arithmetic")
+    ax.set_xlabel("Iterations")
+    ax.set_ylabel("Duration (microseconds)")
     ax.plot(micros)
 
     plt.show()
