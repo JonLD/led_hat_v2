@@ -35,11 +35,11 @@ freqBandData_t midFreqData{
     .leakyAverageCoeff = 0.125,
     .minMagnitude = 200000000};
 
-double frequencyPeak_Hz;
+float frequencyPeak_Hz;
 
-double vImag[numberOfSamples] = {0};
-double vReal[numberOfSamples];
-arduinoFFT FFT = arduinoFFT(vReal, vImag, numberOfSamples, samplingFrequency); /* Create FFT object */
+float vImag[numberOfSamples] = {0};
+float vReal[numberOfSamples];
+ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, numberOfSamples, samplingFrequency); /* Create FFT object */
 
 void analyzeFrequencyBand(freqBandData_t *freqBand)
 {
@@ -58,11 +58,11 @@ void analyzeFrequencyBand(freqBandData_t *freqBand)
 
 void computeFFT()
 {
-    FFT.DCRemoval();
-    FFT.Windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
-    FFT.Compute(FFTDirection::Forward);
-    FFT.ComplexToMagnitude();
-    frequencyPeak_Hz = FFT.MajorPeak();
+    FFT.dcRemoval();
+    FFT.windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
+    FFT.compute(FFTDirection::Forward);
+    FFT.complexToMagnitude();
+    frequencyPeak_Hz = FFT.majorPeak();
     analyzeFrequencyBand(&bassFreqData);
     analyzeFrequencyBand(&midFreqData);
 }
