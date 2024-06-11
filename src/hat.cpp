@@ -214,7 +214,7 @@ void setup()
 
 void loop()
 {
-#ifdef PRINT_PROFILING
+#ifdef PROFILING
     lastProfilingPoint_ms = micros();
 #endif
     if (radioData.isEffectCommand)
@@ -257,7 +257,7 @@ void loop()
     }
     EMIT_PROFILING_EVENT;
     isBeatDetected = false;
-#ifdef PRINT_PROFILING
+#ifdef PROFILING
     Serial.print("\n");
 #endif
 }

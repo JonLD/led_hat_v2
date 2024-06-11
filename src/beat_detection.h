@@ -17,13 +17,13 @@
 #define MAX_BASS_FREQUENCY_HZ 140.0f
 
 // Uncomment to enable print debugging (only enable one at a time)
-// #define PRINT_PROFILING
+#define PROFILING
 // #define PRINT_BIN_MAGNITUDES
 // #define PRINT_NOT_BEAT_DETECTED_REASON
 // #define PRINT_CURRENT_BASS_MAG
 
 
-#ifdef PRINT_PROFILING
+#ifdef PROFILING
 #define EMIT_PROFILING_EVENT {\
     microsNow = micros();\
     Serial.print(microsNow - lastProfilingPoint_ms);\
@@ -31,7 +31,7 @@
     lastProfilingPoint_ms = microsNow;\
 }
 #else
-#define DO(WHAT) do { } while(0)
+#define EMIT_PROFILING_EVENT do { } while(0)
 #endif
 
 const uint16_t numberOfSamples = 512; // This value MUST ALWAYS be a power of 2
