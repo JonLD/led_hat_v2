@@ -31,13 +31,13 @@ unsigned long initialMicros;
 
 typedef struct freqBandData_t
 {
-    double averageMagnitude;
-    double currentMagnitude;
+    float averageMagnitude;
+    float currentMagnitude;
     uint32_t lowerBinIndex;
     uint32_t upperBinIndex;
-    double beatDetectThresholdCoeff;
-    double leakyAverageCoeff;
-    double minMagnitude;
+    float beatDetectThresholdCoeff;
+    float leakyAverageCoeff;
+    float minMagnitude;
 } freqBandData_s;
 
 freqBandData_t bassFreqData{
@@ -47,7 +47,7 @@ freqBandData_t bassFreqData{
     .upperBinIndex = 1,
     .beatDetectThresholdCoeff = 1.2,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 200000000};
+    .minMagnitude = 50000000};
 
 freqBandData_t midFreqData{
     .averageMagnitude = 0,
@@ -56,7 +56,7 @@ freqBandData_t midFreqData{
     .upperBinIndex = 3,
     .beatDetectThresholdCoeff = 1.3,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 200000000};
+    .minMagnitude = 50000000};
 
 float frequencyPeak_Hz;
 
@@ -69,14 +69,14 @@ ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, numberOfSamples, samplin
 #define SCL_FREQUENCY 0x02
 #define SCL_PLOT 0x03
 
-void PrintVector(double *, uint16_t, uint8_t);
+void PrintVector(float *, uint16_t, uint8_t);
 void computeFFT();
 void detectBeat();
 void controlLed(bool);
 void analyzeFrequencyBand(freqBandData_t *);
 void readMicData();
 bool isMagAboveThreshold(freqBandData_t);
-double proportionOfMagAboveAvg(freqBandData_t);
+float proportionOfMagAboveAvg(freqBandData_t);
 
 float weighingFactors[numberOfSamples];
 
@@ -107,7 +107,7 @@ void readMicData()
 {
     // read from the I2S device
     size_t bytes_read = 0;
-    i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * numberOfSamples, &bytes_read, portMAX_DELAY);
+    i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * numberOfSamples, &bytes_read, 0);
     int samples_read = bytes_read / sizeof(int32_t);
     // Serial.println(samples_read);
 
@@ -115,11 +115,16 @@ void readMicData()
     Serial.print(" Read: ");
     Serial.print(micros() - initialMicros);
 #endif
-
-    // dump the samples out to the serial channel.
-    for (int i = 0; i < numberOfSamples; i++)
+    if (samples_read = numberOfSamples)
     {
-        vReal[i] = (float)rawMicSamples[i];
+        // dump the samples out to the serial channel.
+        for (int i = 0; i < numberOfSamples; i++)
+        {
+            // Serial.println((float)rawMicSamples[i]);
+
+            vReal[i] = (float)rawMicSamples[i];
+            vImag[i] = 0;
+        }
     }
 }
 
@@ -156,8 +161,8 @@ void detectBeat()
     const bool isRecentBeat = ((millis() - lastBeatTime_ms) < (BEAT_DEBOUNCE_DURATION_MS));
     const bool peakIsBass = (frequencyPeak_Hz < MAX_BASS_FREQUENCY_HZ);
     const bool isAvgBassAboveMin = (bassFreqData.averageMagnitude > bassFreqData.minMagnitude);
-    const double proportionBassAboveAvg = proportionOfMagAboveAvg(bassFreqData);
-    const double proportionMidAboveAvg = proportionOfMagAboveAvg(midFreqData);
+    const float proportionBassAboveAvg = proportionOfMagAboveAvg(bassFreqData);
+    const float proportionMidAboveAvg = proportionOfMagAboveAvg(midFreqData);
 
     isBeatDetected = (!isRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg);
 
@@ -180,12 +185,6 @@ void detectBeat()
             Serial.println("isBassAboveAvg");
         }
     }
-    if (isBeatDetectedisBeatDetected)
-    {
-        Serial.print("\n");
-        Serial.println("isBeatDetectedisBeatDetected");
-        Serial.print("\n");
-    }
 #endif
 
     if (isBeatDetected)
@@ -204,18 +203,18 @@ bool isMagAboveThreshold(freqBandData_t freqBandData)
     return magIsAboveThreshold;
 }
 
-double proportionOfMagAboveAvg(freqBandData_t freqBandData)
+float proportionOfMagAboveAvg(freqBandData_t freqBandData)
 {
-    const double proportionAboveAvg = (bassFreqData.currentMagnitude / bassFreqData.averageMagnitude);
+    const float proportionAboveAvg = (bassFreqData.currentMagnitude / bassFreqData.averageMagnitude);
     return proportionAboveAvg;
 }
 
 // Print various data for debugging
-void PrintVector(double *vData, uint16_t bufferSize, uint8_t scaleType)
+void PrintVector(float *vData, uint16_t bufferSize, uint8_t scaleType)
 {
     for (uint16_t i = 0; i < bufferSize; i++)
     {
-        double abscissa;
+        float abscissa;
         /* Print abscissa value */
         switch (scaleType)
         {
