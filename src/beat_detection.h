@@ -22,12 +22,25 @@
 // #define PRINT_NOT_BEAT_DETECTED_REASON
 // #define PRINT_CURRENT_BASS_MAG
 
+
+#ifdef PRINT_PROFILING
+#define EMIT_PROFILING_EVENT {\
+    microsNow = micros();\
+    Serial.print(microsNow - lastProfilingPoint_ms);\
+    Serial.print("\t");\
+    lastProfilingPoint_ms = microsNow;\
+}
+#else
+#define DO(WHAT) do { } while(0)
+#endif
+
 const uint16_t numberOfSamples = 512; // This value MUST ALWAYS be a power of 2
 const uint32_t samplingFrequency = 25000;
 
 unsigned long lastBeatTime_ms = 0;
 bool isBeatDetected = false;
-unsigned long initialMicros;
+unsigned long lastProfilingPoint_ms;
+unsigned long microsNow;
 
 typedef struct freqBandData_t
 {
@@ -69,14 +82,13 @@ ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, numberOfSamples, samplin
 #define SCL_FREQUENCY 0x02
 #define SCL_PLOT 0x03
 
-void PrintVector(float *, uint16_t, uint8_t);
 void computeFFT();
 void detectBeat();
-void controlLed(bool);
-void analyzeFrequencyBand(freqBandData_t *);
-void readMicData();
-bool isMagAboveThreshold(freqBandData_t);
-float proportionOfMagAboveAvg(freqBandData_t);
+void readmicMicData();
+static void PrintVector(float *, uint16_t, uint8_t);
+static void analyzeFrequencyBand(freqBandData_t *);
+static bool isMagAboveThreshold(freqBandData_t);
+static float proportionOfMagAboveAvg(freqBandData_t);
 
 float weighingFactors[numberOfSamples];
 
@@ -107,15 +119,19 @@ void readMicData()
 {
     // read from the I2S device
     size_t bytes_read = 0;
-    i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * numberOfSamples, &bytes_read, 0);
+    esp_err_t errCode;
+    errCode = i2s_read(I2S_NUM_0, vReal, sizeof(int32_t) * numberOfSamples, &bytes_read, 0);
+    if (errCode != ESP_OK)
+    {
+        Serial.println(errCode);
+    }
     int samples_read = bytes_read / sizeof(int32_t);
     // Serial.println(samples_read);
 
-#ifdef PRINT_PROFILING
-    Serial.print(" Read: ");
-    Serial.print(micros() - initialMicros);
-#endif
-    if (samples_read = numberOfSamples)
+    EMIT_PROFILING_EVENT;
+
+    // dump the samples out to the serial channel.
+    for (int i = 0; i < numberOfSamples; i++)
     {
         // dump the samples out to the serial channel.
         for (int i = 0; i < numberOfSamples; i++)
@@ -126,6 +142,7 @@ void readMicData()
             vImag[i] = 0;
         }
     }
+    EMIT_PROFILING_EVENT;
 }
 
 void computeFFT()
@@ -197,20 +214,20 @@ void detectBeat()
     }
 }
 
-bool isMagAboveThreshold(freqBandData_t freqBandData)
+static bool isMagAboveThreshold(freqBandData_t freqBandData)
 {
     const bool magIsAboveThreshold = (bassFreqData.currentMagnitude > (bassFreqData.averageMagnitude * bassFreqData.beatDetectThresholdCoeff));
     return magIsAboveThreshold;
 }
 
-float proportionOfMagAboveAvg(freqBandData_t freqBandData)
+static float proportionOfMagAboveAvg(freqBandData_t freqBandData)
 {
     const float proportionAboveAvg = (bassFreqData.currentMagnitude / bassFreqData.averageMagnitude);
     return proportionAboveAvg;
 }
 
 // Print various data for debugging
-void PrintVector(float *vData, uint16_t bufferSize, uint8_t scaleType)
+static void PrintVector(float *vData, uint16_t bufferSize, uint8_t scaleType)
 {
     for (uint16_t i = 0; i < bufferSize; i++)
     {

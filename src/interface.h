@@ -1,6 +1,8 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#define BAUD_RATE 115200
+
 #define MAX_COLOUR_KEYPAD_INDEX 15
 #define MAX_EFFECT_KEYPAD_INDEX 30
 #define AMBIENT_OVERRIDE_KEYPAD_INDEX 31
@@ -89,4 +91,4 @@ radioData_t radioData = {
     .ambientOverride = false,
 };
 
-#endif
+#endif // INTERFACE_H

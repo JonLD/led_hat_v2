@@ -188,7 +188,7 @@ void playSelectedEffect()
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(BAUD_RATE);
 
     // Wifi Setup
     WiFi.mode(WIFI_STA); // Set device as a Wi-Fi Station
@@ -215,7 +215,7 @@ void setup()
 void loop()
 {
 #ifdef PRINT_PROFILING
-    initialMicros = micros();
+    lastProfilingPoint_ms = micros();
 #endif
     if (radioData.isEffectCommand)
     {
@@ -238,34 +238,26 @@ void loop()
         lastBrightness = radioData.brightness;
         Serial.println("setting new brightness");
     }
-#ifdef PRINT_PROFILING
-    Serial.print(" Set colour: ");
-    Serial.print(micros() - initialMicros);
-#endif
+    EMIT_PROFILING_EVENT;
     readMicData();
-#ifdef PRINT_PROFILING
-    Serial.print(" Assignedment: ");
-    Serial.print(micros() - initialMicros);
-#endif
     computeFFT();
-#ifdef PRINT_PROFILING
-    Serial.print(" Analyze: ");
-    Serial.print(micros() - initialMicros);
-#endif
+    EMIT_PROFILING_EVENT;
     detectBeat();
+    EMIT_PROFILING_EVENT;
     if (radioData.ambientOverride)
     {
         isBeatDetected = false;
     }
     effectSelectionEngine();
     playSelectedEffect();
-#ifdef PRINT_PROFILING
-    Serial.print(" LED: ");
-    Serial.println(micros() - initialMicros);
-#endif
+    EMIT_PROFILING_EVENT;
     EVERY_N_MILLIS(15)
     {
         FastLED.show();
     }
+    EMIT_PROFILING_EVENT;
     isBeatDetected = false;
+#ifdef PRINT_PROFILING
+    Serial.print("\n");
+#endif
 }

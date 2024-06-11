@@ -18,6 +18,8 @@ CRGB leds[NUM_LEDS] = {0};
 typedef void (*effect_function_ptr_t)();
 typedef const effect_function_ptr_t effect_array_t[];
 
+void controlLed(bool);
+
 //-------------- Ambient effect arrays --------------
 void noEffect();
 void twinkle();
