@@ -1,3 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
 #define NUMBER_X_LEDS 34
 #define NUMBER_Y_LEDS 5
 #define NUM_LEDS (NUMBER_X_LEDS * NUMBER_Y_LEDS)
@@ -8,3 +11,5 @@
 
 #define BRIGHTNESS_RE_PIN_A 19
 #define BRIGHTNESS_RE_PIN_B 18
+
+#endif // CONFIG_H

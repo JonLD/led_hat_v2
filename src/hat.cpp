@@ -7,6 +7,7 @@
 #include <config.h>
 #include <beat_detection.h>
 #include <effects.h>
+#include "profiling.h"
 
 uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
 
@@ -257,7 +258,7 @@ void loop()
     }
     EMIT_PROFILING_EVENT;
     isBeatDetected = false;
-#ifdef PROFILING
+#ifdef BPS_PROFILING
     Serial.print("\n");
 #endif
 }

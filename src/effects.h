@@ -3,7 +3,7 @@
 
 #include <FastLED.h>
 #include <config.h>
-#include <beat_detection.h>
+#include "beat_detection.h"
 
 #define RANDOM_X random(MAX_X_INDEX + 1)
 #define RANDOM_Y random(MAX_Y_INDEX + 1)
@@ -434,9 +434,9 @@ void strobe()
     }
 }
 
-void controlLed(bool isBeatDetected)
+void controlLed(bool beatDetected)
 {
-    if (isBeatDetected)
+    if (beatDetected)
     {
         for (int x = 0; x <= MAX_X_INDEX; ++x)
         { // fill x
