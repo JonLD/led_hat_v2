@@ -1,6 +1,6 @@
 #include "beat_detection.h"
 
-#include <driver/i2s.h>
+#include "driver/i2s.h"
 
 #define FFT_SQRT_APPROXIMATION
 #define FFT_SPEED_OVER_PRECISION
@@ -8,7 +8,7 @@
 
 #include "profiling.h"
 
-#define BEAT_DEBOUNCE_DURATION_MS 200 // Debounce the beat
+#define BEAT_DEBOUNCE_DURATION_MS 200
 #define MAX_BASS_FREQUENCY_HZ 140.0f
 
 #define SCL_INDEX 0x00
@@ -22,10 +22,8 @@
 #define I2S_MIC_LEFT_RIGHT_CLOCK GPIO_NUM_25
 #define I2S_MIC_SERIAL_DATA GPIO_NUM_33
 
-const uint16_t numberOfSamples = 512; // This value MUST ALWAYS be a power of 2
-
-
-const uint32_t samplingFrequency = 25000;
+const uint16_t numberOfSamples = 1024; // This value MUST ALWAYS be a power of 2
+const uint32_t samplingFrequency = 96000;
 unsigned long lastBeatTime_ms = 0;
 bool isBeatDetected = false;
 
@@ -37,8 +35,8 @@ i2s_config_t i2s_config = {
     .channel_format = I2S_MIC_CHANNEL,
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = 4,
-    .dma_buf_len = 1024,
+    .dma_buf_count = 2,
+    .dma_buf_len = numberOfSamples,
     .use_apll = false,
     .tx_desc_auto_clear = false,
     .fixed_mclk = 0};
@@ -66,22 +64,23 @@ static freqBandData_t bassFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
     .lowerBinIndex = 0,
-    .upperBinIndex = 1,
-    .beatDetectThresholdCoeff = 1.2,
+    .upperBinIndex = 2,
+    .beatDetectThresholdCoeff = 1.3,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 50000000};
+    .minMagnitude = 40000000
+};
 
 static freqBandData_t midFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
-    .lowerBinIndex = 2,
-    .upperBinIndex = 3,
-    .beatDetectThresholdCoeff = 1.3,
+    .lowerBinIndex = 3,
+    .upperBinIndex = 5,
+    .beatDetectThresholdCoeff = 1.4,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 50000000};
+    .minMagnitude = 40000000
+};
 
 static float frequencyPeak_Hz;
-
 float vImag[numberOfSamples] = {0};
 float vReal[numberOfSamples] = {0};
 ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, numberOfSamples, samplingFrequency, true);
@@ -95,29 +94,33 @@ float weighingFactors[numberOfSamples];
 
 int32_t rawMicSamples[numberOfSamples];
 
-void readMicData()
+bool readMicData()
 {
     // read from the I2S device
     size_t bytes_read = 0;
-    esp_err_t errCode;
     i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * numberOfSamples, &bytes_read, portMAX_DELAY);
-
-    int samples_read = bytes_read / sizeof(int32_t);
-    // Serial.println(samples_read);
-
     EMIT_PROFILING_EVENT;
+    const bool readAllSamples =  bytes_read == (sizeof(int32_t) * numberOfSamples);
+    return readAllSamples;
+}
 
-    // dump the samples out to the serial channel.
-    for (int i = 0; i < numberOfSamples; i++)
+static void populateRealAndImag()
+{
+    for (int i = 0; i < FFT_BUFFER_LENGTH; i++)
     {
         vReal[i] = (float)rawMicSamples[i];
+#ifdef OUTPUT_AUDIO
         Serial.print(rawMicSamples[i]);
+#endif
     }
+    // The audio is only real data but the FFT outputs to vImag so it needs to be zeroed each time
+    memset(vImag, 0, sizeof(vImag));
     EMIT_PROFILING_EVENT;
 }
 
 void computeFFT()
 {
+    populateRealAndImag();
     FFT.dcRemoval();
     FFT.windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
     FFT.compute(FFTDirection::Forward);
@@ -173,19 +176,13 @@ void detectBeat()
             Serial.println("isBassAboveAvg");
         }
     }
-    if (isBeatDetectedisBeatDetected)
-    {
-        Serial.print("\n");
-        Serial.println("isBeatDetectedisBeatDetected");
-        Serial.print("\n");
-    }
 #endif
 
     if (isBeatDetected)
     {
         lastBeatTime_ms = millis();
 #ifdef PRINT_BIN_MAGNITUDES
-        PrintVector(vReal, numberOfSamples, SCL_FREQUENCY);
+        PrintVector(vReal, NUMBER_OF_SAMPLES, SCL_FREQUENCY);
         delay(20000);
 #endif
     }
@@ -216,10 +213,10 @@ static void PrintVector(float *vData, uint16_t bufferSize, uint8_t scaleType)
             abscissa = (i * 1.0);
             break;
         case SCL_TIME:
-            abscissa = ((i * 1.0) / samplingFrequency);
+            abscissa = ((i * 1.0) / SAMPLING_FREQUENCY_HZ);
             break;
         case SCL_FREQUENCY:
-            abscissa = ((i * 1.0 * samplingFrequency) / numberOfSamples);
+            abscissa = ((i * 1.0 * SAMPLING_FREQUENCY_HZ) / FFT_BUFFER_LENGTH);
             break;
         }
         Serial.print(abscissa, 6);

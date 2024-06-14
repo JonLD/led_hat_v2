@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <esp_now.h>
+#include <FastLED.h>
 #include <WiFi.h>
 #include <Wire.h>
-#include <interface.h>
-#include <FastLED.h>
-#include <config.h>
-#include <beat_detection.h>
-#include <effects.h>
+
+#include "beat_detection.h"
+#include "config.h"
+#include "effects.h"
+#include "interface.h"
 #include "profiling.h"
 
 uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
@@ -202,10 +203,8 @@ void setup()
     // get recv packer info
     esp_now_register_recv_cb(OnDataRecv);
 
-    // start up the I2S peripheral
     i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
     i2s_set_pin(I2S_NUM_0, &i2s_mic_pins);
-
     // FastLED setup
     FastLED.addLeds<LED_TYPE, LED_DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
     FastLED.setBrightness(radioData.brightness);
@@ -240,11 +239,15 @@ void loop()
         Serial.println("setting new brightness");
     }
     EMIT_PROFILING_EVENT;
-    readMicData();
-    computeFFT();
-    EMIT_PROFILING_EVENT;
-    detectBeat();
-    EMIT_PROFILING_EVENT;
+    int32_t rawMicSamples[FFT_BUFFER_LENGTH];
+    if (readMicData())
+    {
+        EMIT_MIC_PROFILE_POINT;
+        computeFFT();
+        EMIT_PROFILING_EVENT;
+        detectBeat();
+        EMIT_PROFILING_EVENT;
+    }
     if (radioData.ambientOverride)
     {
         isBeatDetected = false;
