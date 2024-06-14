@@ -23,7 +23,7 @@
 #define I2S_MIC_SERIAL_DATA GPIO_NUM_33
 
 const uint16_t numberOfSamples = 1024; // This value MUST ALWAYS be a power of 2
-const uint32_t samplingFrequency = 96000;
+const uint32_t samplingFrequency = 48000;
 unsigned long lastBeatTime_ms = 0;
 bool isBeatDetected = false;
 
@@ -63,21 +63,21 @@ typedef struct freqBandData_t
 static freqBandData_t bassFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
-    .lowerBinIndex = 0,
+    .lowerBinIndex = 1,
     .upperBinIndex = 2,
     .beatDetectThresholdCoeff = 1.3,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 40000000
+    .minMagnitude = 50000000
 };
 
 static freqBandData_t midFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
     .lowerBinIndex = 3,
-    .upperBinIndex = 5,
+    .upperBinIndex = 3,
     .beatDetectThresholdCoeff = 1.4,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 40000000
+    .minMagnitude = 50000000
 };
 
 static float frequencyPeak_Hz;
