@@ -9,8 +9,14 @@
 #include "effects.h"
 #include "i2s_mic.h"
 #include "interface.h"
-#include "timing.h"
+#include "mic_hat_common.h"
 #include "profiling.h"
+#include "timing.h"
+
+#define CORE_HAT    (1u)
+#define CORE_I2S    (1u) // Core for I2S
+#define CORE_MAIN   (1u) // Core for main loop to run
+#define QUEUE_LENGTH 10
 
 #define AMBIENT_EFFECT_TIMEOUT_MS 1000
 #define BEAT_EFFECT_TIMEOUT_MS 520
@@ -192,9 +198,10 @@ static void PlaySelectedEffect()
     Serial.println("Effect not found!");
 }
 
-void setup()
+void HatMain(void *param)
 {
-    Serial.begin(BAUD_RATE);
+    Serial.println("Started Hat thread"); // Intentionally not a debug log
+    QueueHandle_t queue = (QueueHandle_t)param;
 
     // Wifi Setup
     WiFi.mode(WIFI_STA); // Set device as a Wi-Fi Station
@@ -204,60 +211,95 @@ void setup()
         return;
     }
     esp_now_register_recv_cb(PopulateRadioData);
-
-    I2sInit();
     FastLedInit();
-
     SetEffectColour();
+
+    while (true)
+    {
+        if (radioData.isEffectCommand)
+        {
+            radioData.isEffectCommand = false;
+            currentEffect = static_cast<Effect>(radioData.effect);
+        }
+        else
+        {
+            Colour radioDataColour = static_cast<Colour>(radioData.colour);
+            if (currentColour != radioDataColour)
+            {
+                currentColour = radioDataColour;
+                SetEffectColour();
+            }
+        }
+        static uint8_t lastBrightness = radioData.brightness;
+        if (radioData.brightness != lastBrightness)
+        {
+            FastLED.setBrightness(radioData.brightness);
+            lastBrightness = radioData.brightness;
+            Serial.println("setting new brightness");
+        }
+        EMIT_PROFILING_EVENT;
+        
+        ThreadMsg_t newMsg;
+        BaseType_t result = xQueueReceive(queue, &newMsg, NON_BLOCKING);
+        if (result == pdTRUE)
+        {
+             EMIT_MIC_READ_EVENT;
+            ComputeFFT(newMsg.rawMicSamples);
+            EMIT_PROFILING_EVENT;
+            DetectBeat();
+            EMIT_PROFILING_EVENT;
+        }
+
+        if (radioData.ambientOverride)
+        {
+            isBeatDetected = false;
+        }
+        EffectSelectionEngine();
+        PlaySelectedEffect();
+        EMIT_PROFILING_EVENT;
+        EVERY_N_MILLIS(15)
+        {
+            FastLED.show();
+        }
+        EMIT_PROFILING_EVENT;
+        isBeatDetected = false;
+    #ifdef BPS_PROFILING
+        Serial.print("\n");
+    #endif
+    }
+}
+
+// Create a queue that the two threads can share
+QueueHandle_t msgQueue = xQueueCreate(QUEUE_LENGTH, sizeof(ThreadMsg_t));
+
+void setup()
+{
+    Serial.begin(BAUD_RATE);
+
+    TaskHandle_t taskHat;
+    TaskHandle_t taskI2s;
+
+    xTaskCreatePinnedToCore(
+        HatMain,
+        "HatThread",
+        35000,  // Experimental, no idea if this is sensible
+        msgQueue,
+        0,
+        &taskHat,
+        CORE_HAT);
+
+    xTaskCreatePinnedToCore(
+        I2sMain,     // Function to run
+        "I2sThread", // Task name
+        9600,        // Stack size in words
+        msgQueue,    // Parameter to pass in
+        1,           // Priority
+        &taskI2s,    // Task handle out
+        CORE_I2S);   // Core binding
+
 }
 
 void loop()
 {
-    if (radioData.isEffectCommand)
-    {
-        radioData.isEffectCommand = false;
-        currentEffect = static_cast<Effect>(radioData.effect);
-    }
-    else
-    {
-        Colour radioDataColour = static_cast<Colour>(radioData.colour);
-        if (currentColour != radioDataColour)
-        {
-            currentColour = radioDataColour;
-            SetEffectColour();
-        }
-    }
-    static uint8_t lastBrightness = radioData.brightness;
-    if (radioData.brightness != lastBrightness)
-    {
-        FastLED.setBrightness(radioData.brightness);
-        lastBrightness = radioData.brightness;
-        Serial.println("setting new brightness");
-    }
-    EMIT_PROFILING_EVENT;
-    int32_t rawMicSamples[FFT_BUFFER_LENGTH];
-    if (ReadMicData(rawMicSamples))
-    {
-        EMIT_MIC_READ_EVENT;
-        ComputeFFT(rawMicSamples);
-        EMIT_PROFILING_EVENT;
-        DetectBeat();
-        EMIT_PROFILING_EVENT;
-    }
-    if (radioData.ambientOverride)
-    {
-        isBeatDetected = false;
-    }
-    EffectSelectionEngine();
-    PlaySelectedEffect();
-    EMIT_PROFILING_EVENT;
-    EVERY_N_MILLIS(15)
-    {
-        FastLED.show();
-    }
-    EMIT_PROFILING_EVENT;
-    isBeatDetected = false;
-#ifdef BPS_PROFILING
-    Serial.print("\n");
-#endif
+
 }

@@ -10,8 +10,6 @@
 #define I2S_MIC_LEFT_RIGHT_CLOCK GPIO_NUM_25
 #define I2S_MIC_SERIAL_DATA GPIO_NUM_33
 
-#define CORE_I2S    (0u) // Core for I2S
-#define CORE_MAIN   (1u) // Core for main loop to run
 
 static i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
@@ -33,26 +31,11 @@ static i2s_pin_config_t i2s_mic_pins = {
     .data_in_num = I2S_MIC_SERIAL_DATA
 };
 
-void I2sMain(void *);
+static void I2sInit();
+static bool ReadMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH]);
 
-// Create two tasks: one for network and one for LEDs
-TaskHandle_t taskI2s;
-void InitialiseI2sThread()
-{
-    // Create two tasks: one for network and one for LEDs
-    TaskHandle_t taskLed;
-    TaskHandle_t taskNetwork;
-    xTaskCreatePinnedToCore(
-        I2sMain,     // Function to run
-        "I2sThread", // Task name
-        9600,        // Stack size in words
-        msgQueue,    // Parameter to pass in
-        0,           // Priority
-        &taskLed,    // Task handle out
-        CORE_I2S);  // Core binding
-}
 
-void I2sInit()
+static void I2sInit()
 {
     i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
     i2s_set_pin(I2S_NUM_0, &i2s_mic_pins);
@@ -60,7 +43,7 @@ void I2sInit()
 
 // Return true if read FFT_BUFFER_LENGTH samples
 // @param rawMicSamples[out]    Output buffer to store samples from mic in
-bool ReadMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
+static bool ReadMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
 {
     size_t bytes_read = 0;
     i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * FFT_BUFFER_LENGTH, &bytes_read, portMAX_DELAY);
