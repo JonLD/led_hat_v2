@@ -12,79 +12,79 @@ extern CRGB colour3;
 typedef void (*effect_function_ptr_t)();
 typedef const effect_function_ptr_t effect_array_t[];
 
-void controlLed(bool);
+void ControlLed(bool);
 
 //-------------- Ambient effect arrays --------------
-void noEffect();
-void twinkle();
-void strobe();
-void waveClockwise();
-void waveAnticlockwise();
+void NoEffect();
+void Twinkle();
+void Strobe();
+void WaveClockwise();
+void WaveAnticlockwise();
 
-effect_array_t no_effect = {noEffect};
-effect_array_t twinkle_ = {twinkle};
-effect_array_t wave_clockwise = {waveClockwise};
-effect_array_t wave_anticlockwise = {waveAnticlockwise};
-effect_array_t strobe_ = {strobe};
+effect_array_t no_effect = {NoEffect};
+effect_array_t twinkle_ = {Twinkle};
+effect_array_t wave_clockwise = {WaveClockwise};
+effect_array_t wave_anticlockwise = {WaveAnticlockwise};
+effect_array_t strobe_ = {Strobe};
 
 //-------------- Beat effect arrays --------------
-void verticalBars();
-void waveUp();
-void waveDown();
-void randomCross();
-void horizontalRay();
-void fastLedInit();
+void VerticalBars();
+void WaveUp();
+void WaveDown();
+void RandomCross();
+void HorizontalRay();
+void FastLedInit();
 
 effect_array_t vertical_bars_clockwise = {
-    verticalBars,
+    VerticalBars,
 };
 effect_array_t wave_up = {
-    waveUp,
+    WaveUp,
 };
 effect_array_t wave_down = {
-    waveDown,
+    WaveDown,
 };
 effect_array_t wave_up_down = {
-    waveDown,
-    waveUp,
+    WaveDown,
+    WaveUp,
 };
 effect_array_t wave_flash_double = {
-    waveUp,
-    waveUp,
-    verticalBars,
-    verticalBars,
+    WaveUp,
+    WaveUp,
+    VerticalBars,
+    VerticalBars,
 };
 effect_array_t eigh_wave_eight_bars = {
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    waveUp,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    verticalBars,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
-    waveDown,
+    WaveUp,
+    WaveUp,
+    WaveUp,
+    WaveUp,
+    WaveUp,
+    WaveUp,
+    WaveUp,
+    WaveUp,
+    VerticalBars,
+    VerticalBars,
+    VerticalBars,
+    VerticalBars,
+    VerticalBars,
+    VerticalBars,
+    VerticalBars,
+    VerticalBars,
+    WaveDown,
+    WaveDown,
+    WaveDown,
+    WaveDown,
+    WaveDown,
+    WaveDown,
+    WaveDown,
+    WaveDown,
 };
 effect_array_t random_cross = {
-    randomCross,
+    RandomCross,
 };
 effect_array_t horizontal_ray = {
-    horizontalRay,
+    HorizontalRay,
 };
 
 #endif // EFFECTS_H

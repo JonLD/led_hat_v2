@@ -56,38 +56,25 @@ float vImag[FFT_BUFFER_LENGTH] = {0};
 float vReal[FFT_BUFFER_LENGTH] = {0};
 ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, FFT_BUFFER_LENGTH, SAMPLING_FREQUENCY_HZ, true);
 
-static void analyzeFrequencyBand(freqBandData_t *);
-static bool isMagAboveThreshold(freqBandData_t);
-static float proportionOfMagAboveAvg(freqBandData_t);
+static void AnalyzeFrequencyBand(freqBandData_t *);
+static bool IsMagAboveThreshold(freqBandData_t);
+static float ProportionOfMagAboveAvg(freqBandData_t);
+static void PopulateRealAndImag(int32_t rawMicSamples[FFT_BUFFER_LENGTH]);
 
 
-static void populateRealAndImag(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
+void ComputeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
 {
-    for (int i = 0; i < FFT_BUFFER_LENGTH; i++)
-    {
-        vReal[i] = (float)rawMicSamples[i];
-#ifdef OUTPUT_AUDIO
-        Serial.print(rawMicSamples[i]);
-#endif
-    }
-    // The audio is only real data but the FFT outputs to vImag so it needs to be zeroed each time
-    memset(vImag, 0, sizeof(vImag));
-    EMIT_PROFILING_EVENT;
-}
-
-void computeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
-{
-    populateRealAndImag(rawMicSamples);
+    PopulateRealAndImag(rawMicSamples);
     FFT.dcRemoval();
     FFT.windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
     FFT.compute(FFTDirection::Forward);
     FFT.complexToMagnitude();
     
-    analyzeFrequencyBand(&bassFreqData);
-    analyzeFrequencyBand(&midFreqData);
+    AnalyzeFrequencyBand(&bassFreqData);
+    AnalyzeFrequencyBand(&midFreqData);
 }
 
-void analyzeFrequencyBand(freqBandData_t *freqBand)
+void AnalyzeFrequencyBand(freqBandData_t *freqBand)
 {
     // Calculate current magnitude by averaging bins in frequency range
     freqBand->currentMagnitude = 0;
@@ -102,15 +89,15 @@ void analyzeFrequencyBand(freqBandData_t *freqBand)
     freqBand->averageMagnitude += (freqBand->currentMagnitude - freqBand->averageMagnitude) * (freqBand->leakyAverageCoeff);
 }
 
-void detectBeat()
+void DetectBeat()
 {
-    const bool isBassAboveAvg = isMagAboveThreshold(bassFreqData);
-    const bool isMidAboveAvg = isMagAboveThreshold(midFreqData);
+    const bool isBassAboveAvg = IsMagAboveThreshold(bassFreqData);
+    const bool isMidAboveAvg = IsMagAboveThreshold(midFreqData);
     const bool isNoRecentBeat = ((millis() - lastBeatTime_ms) > (BEAT_DEBOUNCE_DURATION_MS));
     const bool peakIsBass = (FFT.majorPeak() < MAX_BASS_FREQUENCY_HZ);
     const bool isAvgBassAboveMin = (bassFreqData.averageMagnitude > bassFreqData.minMagnitude);
-    const float proportionBassAboveAvg = proportionOfMagAboveAvg(bassFreqData);
-    const float proportionMidAboveAvg = proportionOfMagAboveAvg(midFreqData);
+    const float proportionBassAboveAvg = ProportionOfMagAboveAvg(bassFreqData);
+    const float proportionMidAboveAvg = ProportionOfMagAboveAvg(midFreqData);
 
     isBeatDetected = (isNoRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg);
 
@@ -145,13 +132,27 @@ void detectBeat()
     }
 }
 
-static bool isMagAboveThreshold(freqBandData_t freqBandData)
+static void PopulateRealAndImag(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
+{
+    for (int i = 0; i < FFT_BUFFER_LENGTH; i++)
+    {
+        vReal[i] = (float)rawMicSamples[i];
+#ifdef OUTPUT_AUDIO
+        Serial.print(rawMicSamples[i]);
+#endif
+    }
+    // The audio is only real data but the FFT outputs to vImag so it needs to be zeroed each time
+    memset(vImag, 0, sizeof(vImag));
+    EMIT_PROFILING_EVENT;
+}
+
+static bool IsMagAboveThreshold(freqBandData_t freqBandData)
 {
     const bool magIsAboveThreshold = (bassFreqData.currentMagnitude > (bassFreqData.averageMagnitude * bassFreqData.beatDetectThresholdCoeff));
     return magIsAboveThreshold;
 }
 
-static float proportionOfMagAboveAvg(freqBandData_t freqBandData)
+static float ProportionOfMagAboveAvg(freqBandData_t freqBandData)
 {
     const float proportionAboveAvg = (bassFreqData.currentMagnitude / bassFreqData.averageMagnitude);
     return proportionAboveAvg;

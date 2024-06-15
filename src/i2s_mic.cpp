@@ -27,7 +27,7 @@ static i2s_pin_config_t i2s_mic_pins = {
     .data_in_num = I2S_MIC_SERIAL_DATA
 };
 
-void i2sInit()
+void I2sInit()
 {
     i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
     i2s_set_pin(I2S_NUM_0, &i2s_mic_pins);
@@ -35,7 +35,7 @@ void i2sInit()
 
 // Return true if read FFT_BUFFER_LENGTH samples
 // @param rawMicSamples[out]    Output buffer to store samples from mic in
-bool readMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
+bool ReadMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
 {
     size_t bytes_read = 0;
     i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * FFT_BUFFER_LENGTH, &bytes_read, portMAX_DELAY);
