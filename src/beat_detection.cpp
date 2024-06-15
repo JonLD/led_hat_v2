@@ -6,6 +6,7 @@
 #define FFT_SPEED_OVER_PRECISION
 #include <arduinoFFT.h>
 
+#include "timing.h"
 #include "profiling.h"
 
 #define BEAT_DEBOUNCE_DURATION_MS 200
@@ -69,7 +70,7 @@ void ComputeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
     FFT.windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
     FFT.compute(FFTDirection::Forward);
     FFT.complexToMagnitude();
-    
+
     AnalyzeFrequencyBand(&bassFreqData);
     AnalyzeFrequencyBand(&midFreqData);
 }
@@ -93,7 +94,7 @@ void DetectBeat()
 {
     const bool isBassAboveAvg = IsMagAboveThreshold(bassFreqData);
     const bool isMidAboveAvg = IsMagAboveThreshold(midFreqData);
-    const bool isNoRecentBeat = ((millis() - lastBeatTime_ms) > (BEAT_DEBOUNCE_DURATION_MS));
+    const bool isNoRecentBeat = (GetMillis() - lastBeatTime_ms) > (BEAT_DEBOUNCE_DURATION_MS);
     const bool peakIsBass = (FFT.majorPeak() < MAX_BASS_FREQUENCY_HZ);
     const bool isAvgBassAboveMin = (bassFreqData.averageMagnitude > bassFreqData.minMagnitude);
     const float proportionBassAboveAvg = ProportionOfMagAboveAvg(bassFreqData);
@@ -124,7 +125,7 @@ void DetectBeat()
 
     if (isBeatDetected)
     {
-        lastBeatTime_ms = millis();
+        lastBeatTime_ms = GetMillis();
 #ifdef PRINT_BIN_MAGNITUDES
         PrintVector(vReal, NUMBER_OF_SAMPLES, SCL_FREQUENCY);
         delay(20000);
@@ -157,4 +158,3 @@ static float ProportionOfMagAboveAvg(freqBandData_t freqBandData)
     const float proportionAboveAvg = (bassFreqData.currentMagnitude / bassFreqData.averageMagnitude);
     return proportionAboveAvg;
 }
-
