@@ -46,6 +46,7 @@ void BpmDetection_Init(int64_t nowMs)
 void BpmDetection_Step(int64_t nowMs)
 {
     const uint32_t beatIntervalMs = (uint32_t)(nowMs - bpmState.lastBeatTime);
+    bpmState.lastBeatTime = nowMs;
 
     // If this interval was acceptable, update our array
     if (BETWEEN(MIN_ALLOWED_INTERVAL, beatIntervalMs, MAX_ALLOWED_INTERVAL))
