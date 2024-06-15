@@ -1,6 +1,13 @@
 #ifndef PROFILING_H
 #define PROFILING_H
 
+#include <arduino.h>
+
+#define SCL_INDEX 0x00
+#define SCL_TIME 0x01
+#define SCL_FREQUENCY 0x02
+#define SCL_PLOT 0x03
+
 // Uncomment to enable print debugging (only enable one at a time)
 // #define OUTPUT_AUDIO
 // #define TIME_PROFILING
@@ -37,6 +44,8 @@ extern unsigned long microsNow;
 #else
 #define EMIT_MIC_PROFILE_POINT do { } while(0)
 #endif // PROFILE_MIC_READ
+
+void PrintVector(float *, uint16_t, uint8_t);
 
 
 #endif // PROFILING_H
