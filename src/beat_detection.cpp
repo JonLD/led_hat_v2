@@ -12,13 +12,6 @@
 #define BEAT_DEBOUNCE_DURATION_MS 200
 #define MAX_BASS_FREQUENCY_HZ 140.0f
 
-
-// you shouldn't need to change these settings
-#define I2S_MIC_CHANNEL I2S_CHANNEL_FMT_ONLY_RIGHT
-#define I2S_MIC_SERIAL_CLOCK GPIO_NUM_32
-#define I2S_MIC_LEFT_RIGHT_CLOCK GPIO_NUM_25
-#define I2S_MIC_SERIAL_DATA GPIO_NUM_33
-
 unsigned long lastBeatTime_ms = 0;
 bool isBeatDetected = false;
 
