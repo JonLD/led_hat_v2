@@ -15,11 +15,9 @@
 // #define PRINT_NOT_BEAT_DETECTED_REASON
 // #define PRINT_CURRENT_BASS_MAG
 // #define PROFILE_MIC_READ
+// #define BEAT_DETECTION_PROFILING
 
 
-#ifdef OUTPUT_AUDIO
-#define BPS_PROFILING
-#endif // OUTPUT_AUDIO
 
 extern unsigned long lastProfilingPoint_ms;
 extern unsigned long microsNow;
@@ -37,14 +35,24 @@ extern unsigned long microsNow;
 #endif // TIME_PROFILING
 
 #ifdef PROFILE_MIC_READ
-#define EMIT_MIC_PROFILE_POINT {\
+#define EMIT_MIC_READ_EVENT {\
     microsNow = micros();\
     Serial.println(microsNow - lastProfilingPoint_ms);\
     lastProfilingPoint_ms = microsNow;\
 }
 #else
-#define EMIT_MIC_PROFILE_POINT do { } while(0)
+#define EMIT_MIC_READ_EVENT do { } while(0)
 #endif // PROFILE_MIC_READ
+
+#ifdef BEAT_DETECTION_PROFILING
+#define BPS_PROFILING
+#define EMIT_DETECTION_EVENT (DETECTION_CONDITION) {\
+    Serial.print(DETECTION_CONDITION);\
+    Serial.print("\t");\
+}
+#else
+#define EMIT_DETECTION_EVENT () do { } while(0)
+#endif // TIME_PROFILING
 
 void PrintVector(float *, uint16_t, uint8_t);
 

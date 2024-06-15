@@ -37,9 +37,9 @@ static freqBandData_t bassFreqData{
     .currentMagnitude = 0,
     .lowerBinIndex = 1,
     .upperBinIndex = 2,
-    .beatDetectThresholdCoeff = 1.5,
+    .beatDetectThresholdCoeff = 1.4,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 50000000
+    .minMagnitude = 100000000
 };
 
 static freqBandData_t midFreqData{
@@ -47,9 +47,9 @@ static freqBandData_t midFreqData{
     .currentMagnitude = 0,
     .lowerBinIndex = 3,
     .upperBinIndex = 3,
-    .beatDetectThresholdCoeff = 1.6,
+    .beatDetectThresholdCoeff = 1.5,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 50000000
+    .minMagnitude = 100000000
 };
 
 float vImag[FFT_BUFFER_LENGTH] = {0};
@@ -59,8 +59,6 @@ ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, FFT_BUFFER_LENGTH, SAMPL
 static void analyzeFrequencyBand(freqBandData_t *);
 static bool isMagAboveThreshold(freqBandData_t);
 static float proportionOfMagAboveAvg(freqBandData_t);
-
-float weighingFactors[FFT_BUFFER_LENGTH];
 
 
 static void populateRealAndImag(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
@@ -108,19 +106,19 @@ void detectBeat()
 {
     const bool isBassAboveAvg = isMagAboveThreshold(bassFreqData);
     const bool isMidAboveAvg = isMagAboveThreshold(midFreqData);
-    const bool isRecentBeat = ((millis() - lastBeatTime_ms) < (BEAT_DEBOUNCE_DURATION_MS));
+    const bool isNoRecentBeat = ((millis() - lastBeatTime_ms) > (BEAT_DEBOUNCE_DURATION_MS));
     const bool peakIsBass = (FFT.majorPeak() < MAX_BASS_FREQUENCY_HZ);
     const bool isAvgBassAboveMin = (bassFreqData.averageMagnitude > bassFreqData.minMagnitude);
     const float proportionBassAboveAvg = proportionOfMagAboveAvg(bassFreqData);
     const float proportionMidAboveAvg = proportionOfMagAboveAvg(midFreqData);
 
-    isBeatDetected = (!isRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg);
+    isBeatDetected = (isNoRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg);
 
 #ifdef PRINT_CURRENT_BASS_MAG
     Serial.println(bassFreqData.currentMagnitude);
 #endif
 #ifdef PRINT_NOT_BEAT_DETECTED_REASON
-    if (!isRecentBeat)
+    if (!isNoRecentBeat)
     {
         if (isBassAboveAvg && peakIsBass)
         {

@@ -212,9 +212,6 @@ void setup()
 
 void loop()
 {
-#ifdef PROFILING
-    lastProfilingPoint_ms = micros();
-#endif
     if (radioData.isEffectCommand)
     {
         radioData.isEffectCommand = false;
@@ -240,7 +237,7 @@ void loop()
     int32_t rawMicSamples[FFT_BUFFER_LENGTH];
     if (readMicData(rawMicSamples))
     {
-        EMIT_MIC_PROFILE_POINT;
+        EMIT_MIC_READ_EVENT;
         computeFFT(rawMicSamples);
         EMIT_PROFILING_EVENT;
         detectBeat();
