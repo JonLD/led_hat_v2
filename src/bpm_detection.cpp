@@ -66,6 +66,9 @@ void BpmDetection_Step(int64_t nowMs)
             beatAcc += bpmState.lastInRangeBpmValues[idx];
         }
     }
-    bpmState.currentBpmEstimate = beatAcc / totalBeats;
+    if (totalBeats > 0)
+    {
+        bpmState.currentBpmEstimate = beatAcc / totalBeats;
+    }
     Serial.printf("%u\t%u\n", beatIntervalMs, bpmState.currentBpmEstimate);
 }
