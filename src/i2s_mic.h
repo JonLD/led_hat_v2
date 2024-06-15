@@ -5,7 +5,7 @@
 #include "beat_detection.h"
 
 
-bool readMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH]);
-void i2sInit();
+bool ReadMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH]);
+void I2sInit();
 
 #endif // I2S_MIC_H

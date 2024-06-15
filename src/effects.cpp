@@ -16,15 +16,13 @@ CRGB colour3 = CRGB::Blue;
 
 CRGB leds[NUM_LEDS] = {0};
 
-static int mapXYtoIndex(int x, int y);
-static void fadeLeds(int fadeBy);
-static void generateDistributedRandomNumbers(int *outBuffer, int count, int min, int max);
-static CRGB getRandomColourChoice();
+static int MapXYtoIndex(int x, int y);
+static void FadeLeds(int fadeBy);
+static void GenerateDistributedRandomNumbers(int *outBuffer, int count, int min, int max);
+static CRGB GetRandomColourChoice();
 
 
-
-
-void fastLedInit()
+void FastLedInit()
 {
     FastLED.addLeds<LED_TYPE, LED_DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
     FastLED.setBrightness(radioData.brightness);
@@ -33,12 +31,12 @@ void fastLedInit()
 
 // ----- Effect functions -----
 
-void noEffect()
+void NoEffect()
 {
-    fadeLeds(100);
+    FadeLeds(100);
 }
 
-void waveUp()
+void WaveUp()
 {
     static int16_t y = -1;
     if (isBeatDetected)
@@ -54,28 +52,28 @@ void waveUp()
                 // sequence of logic to create pattern
                 if ((y % 2 == 0) && (x % 2 != 0))
                 {
-                    leds[mapXYtoIndex(x, y)] = colour1;
+                    leds[MapXYtoIndex(x, y)] = colour1;
                 }
                 else if ((y % 2 == 0) && (x % 2 == 0))
                 {
-                    leds[mapXYtoIndex(x, y)] = colour3;
+                    leds[MapXYtoIndex(x, y)] = colour3;
                 }
                 else if (x % 2 == 0)
                 {
-                    leds[mapXYtoIndex(x, y)] = colour2;
+                    leds[MapXYtoIndex(x, y)] = colour2;
                 }
                 else
                 {
-                    leds[mapXYtoIndex(x, y)] = colour3;
+                    leds[MapXYtoIndex(x, y)] = colour3;
                 }
             }
             y -= 1;
         }
     }
-    fadeLeds(100);
+    FadeLeds(100);
 }
 
-void waveClockwise()
+void WaveClockwise()
 {
     static int16_t x = 0;
     if (x <= MAX_X_INDEX)
@@ -86,19 +84,19 @@ void waveClockwise()
             {
                 if ((x % 2 == 0) && (y % 2 != 0))
                 {
-                    leds[mapXYtoIndex(x, y)] = colour1;
+                    leds[MapXYtoIndex(x, y)] = colour1;
                 }
                 else if ((x % 2 == 0) && (y % 2 == 0))
                 {
-                    leds[mapXYtoIndex(x, y)] = colour3;
+                    leds[MapXYtoIndex(x, y)] = colour3;
                 }
                 else if (y % 2 == 0)
                 {
-                    leds[mapXYtoIndex(x, y)] = colour2;
+                    leds[MapXYtoIndex(x, y)] = colour2;
                 }
                 else
                 {
-                    leds[mapXYtoIndex(x, y)] = colour3;
+                    leds[MapXYtoIndex(x, y)] = colour3;
                 }
             }
             ++x;
@@ -108,10 +106,10 @@ void waveClockwise()
     {
         x = 0;
     }
-    fadeLeds(40);
+    FadeLeds(40);
 }
 
-void waveAnticlockwise()
+void WaveAnticlockwise()
 {
     static int16_t x = 0;
     if (x >= 0)
@@ -122,19 +120,19 @@ void waveAnticlockwise()
             {
                 if ((x % 2 == 0) && (y % 2 != 0))
                 {
-                    leds[mapXYtoIndex(x, y)] = colour1;
+                    leds[MapXYtoIndex(x, y)] = colour1;
                 }
                 else if ((x % 2 == 0) && (y % 2 == 0))
                 {
-                    leds[mapXYtoIndex(x, y)] = colour3;
+                    leds[MapXYtoIndex(x, y)] = colour3;
                 }
                 else if (y % 2 == 0)
                 {
-                    leds[mapXYtoIndex(x, y)] = colour2;
+                    leds[MapXYtoIndex(x, y)] = colour2;
                 }
                 else
                 {
-                    leds[mapXYtoIndex(x, y)] = colour3;
+                    leds[MapXYtoIndex(x, y)] = colour3;
                 }
             }
             --x;
@@ -144,10 +142,10 @@ void waveAnticlockwise()
     {
         x = MAX_X_INDEX;
     }
-    fadeLeds(40);
+    FadeLeds(40);
 }
 
-void waveDown()
+void WaveDown()
 {
     static int16_t y = -1;
     if (isBeatDetected)
@@ -162,28 +160,28 @@ void waveDown()
             {
                 if ((y % 2 == 0) && (x % 2 != 0))
                 {
-                    leds[mapXYtoIndex(x, y)] = colour1;
+                    leds[MapXYtoIndex(x, y)] = colour1;
                 }
                 else if ((y % 2 == 0) && (x % 2 == 0))
                 {
-                    leds[mapXYtoIndex(x, y)] = colour3;
+                    leds[MapXYtoIndex(x, y)] = colour3;
                 }
                 else if (x % 2 == 0)
                 {
-                    leds[mapXYtoIndex(x, y)] = colour2;
+                    leds[MapXYtoIndex(x, y)] = colour2;
                 }
                 else
                 {
-                    leds[mapXYtoIndex(x, y)] = colour3;
+                    leds[MapXYtoIndex(x, y)] = colour3;
                 }
             }
             ++y;
         }
     }
-    fadeLeds(100);
+    FadeLeds(100);
 }
 
-void verticalBars()
+void VerticalBars()
 {
     if (isBeatDetected)
     {
@@ -192,16 +190,16 @@ void verticalBars()
         {
             for (int y = 0; y <= MAX_Y_INDEX; y++)
             {
-                leds[mapXYtoIndex(x, y)] = colour1;
+                leds[MapXYtoIndex(x, y)] = colour1;
             }
         }
         FastLED.show();
         xStart = (xStart == 3) ? (xStart - 2) : ++xStart;
     }
-    fadeLeds(100);
+    FadeLeds(100);
 }
 
-void horizontalBars()
+void HorizontalBars()
 {
     if (isBeatDetected)
     {
@@ -210,42 +208,42 @@ void horizontalBars()
         { // fill x
             for (int x = 0; x <= MAX_Y_INDEX; x++)
             { // fill y
-                leds[mapXYtoIndex(x, y)] = colour1;
+                leds[MapXYtoIndex(x, y)] = colour1;
             }
         }
 
         FastLED.show();
         yStart = yStart ? yStart : ++yStart; // TODO What is this logic :O
     }
-    fadeLeds(100);
+    FadeLeds(100);
 }
 
-void randomCross()
+void RandomCross()
 {
     if (isBeatDetected)
     {
         int randXs[3] = {0};
-        generateDistributedRandomNumbers(randXs, 3, 0, MAX_X_INDEX);
+        GenerateDistributedRandomNumbers(randXs, 3, 0, MAX_X_INDEX);
 
         int randY = RANDOM_Y;
 
         for (int x = 0; x <= MAX_X_INDEX; x++)
         {
-            leds[mapXYtoIndex(x, randY)] = colour1;
+            leds[MapXYtoIndex(x, randY)] = colour1;
         }
 
         for (int y = 0; y <= MAX_Y_INDEX; y++)
         {
             for (int i = 0; i < 3; i++)
             {
-                leds[mapXYtoIndex(randXs[i], y)] = colour1;
+                leds[MapXYtoIndex(randXs[i], y)] = colour1;
             }
         }
     }
-    fadeLeds(100);
+    FadeLeds(100);
 }
 
-void horizontalRay()
+void HorizontalRay()
 {
     static bool active = false;
     static int counter = 0;
@@ -265,11 +263,11 @@ void horizontalRay()
     {
         EVERY_N_MILLISECONDS(5)
         {
-            leds[mapXYtoIndex(x1 + counter, y)] = colour1;
-            leds[mapXYtoIndex(x1 - counter, y)] = colour1;
+            leds[MapXYtoIndex(x1 + counter, y)] = colour1;
+            leds[MapXYtoIndex(x1 - counter, y)] = colour1;
 
-            leds[mapXYtoIndex(x2 + counter, y)] = colour2;
-            leds[mapXYtoIndex(x2 - counter, y)] = colour2;
+            leds[MapXYtoIndex(x2 + counter, y)] = colour2;
+            leds[MapXYtoIndex(x2 - counter, y)] = colour2;
 
             if (++counter > NUMBER_X_LEDS / 4 + (NUMBER_X_LEDS % 4 != 0))
             {
@@ -279,22 +277,22 @@ void horizontalRay()
         }
     }
 
-    fadeLeds(100);
+    FadeLeds(100);
 }
 
-void twinkle()
+void Twinkle()
 {
-    fadeLeds(20);
+    FadeLeds(20);
     EVERY_N_MILLIS(20)
     {
-        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = getRandomColourChoice();
-        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = getRandomColourChoice();
-        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = getRandomColourChoice();
-        leds[mapXYtoIndex(RANDOM_X, RANDOM_Y)] = getRandomColourChoice();
+        leds[MapXYtoIndex(RANDOM_X, RANDOM_Y)] = GetRandomColourChoice();
+        leds[MapXYtoIndex(RANDOM_X, RANDOM_Y)] = GetRandomColourChoice();
+        leds[MapXYtoIndex(RANDOM_X, RANDOM_Y)] = GetRandomColourChoice();
+        leds[MapXYtoIndex(RANDOM_X, RANDOM_Y)] = GetRandomColourChoice();
     }
 }
 
-void strobe()
+void Strobe()
 {
     FastLED.clear();
     EVERY_N_MILLISECONDS(40)
@@ -308,7 +306,7 @@ void strobe()
     }
 }
 
-void controlLed(bool beatDetected)
+void ControlLed(bool beatDetected)
 {
     if (beatDetected)
     {
@@ -316,20 +314,20 @@ void controlLed(bool beatDetected)
         {
             for (int y = 0; y <= MAX_Y_INDEX; ++y)
             {
-                leds[mapXYtoIndex(x, y)] = CRGB::Blue;
+                leds[MapXYtoIndex(x, y)] = CRGB::Blue;
             }
         }
     }
     else
     {
-        fadeLeds(400);
+        FadeLeds(400);
     }
 }
 
 // ----- Effect utils -----
 
 // Map any x, y coordinate on LED matrix to LED array index
-static int mapXYtoIndex(int x, int y)
+static int MapXYtoIndex(int x, int y)
 {
     x %= NUMBER_X_LEDS;
     if (x < 0)
@@ -350,7 +348,7 @@ static int mapXYtoIndex(int x, int y)
     return i;
 }
 
-static void fadeLeds(int fadeBy)
+static void FadeLeds(int fadeBy)
 {
     EVERY_N_MILLIS(15)
     {
@@ -358,7 +356,7 @@ static void fadeLeds(int fadeBy)
     }
 }
 
-static void generateDistributedRandomNumbers(int *outBuffer, int count, int min, int max)
+static void GenerateDistributedRandomNumbers(int *outBuffer, int count, int min, int max)
 {
     int zoneSize = (max - min + 1) / count;
 
@@ -369,7 +367,7 @@ static void generateDistributedRandomNumbers(int *outBuffer, int count, int min,
     outBuffer[count - 1] = random(min + zoneSize * (count - 1), max + 1);
 }
 
-static CRGB getRandomColourChoice()
+static CRGB GetRandomColourChoice()
 {
     switch (random(3))
     {

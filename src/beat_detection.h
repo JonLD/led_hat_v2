@@ -9,7 +9,7 @@
 extern unsigned long lastBeatTime_ms;
 extern bool isBeatDetected;
 
-void computeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH]);
-void detectBeat();
+void ComputeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH]);
+void DetectBeat();
 
 #endif // BEAT_DETECTION_H
