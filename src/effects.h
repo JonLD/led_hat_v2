@@ -34,6 +34,7 @@ void WaveDown();
 void RandomCross();
 void HorizontalRay();
 void FastLedInit();
+void HorizontalBars();
 
 effect_array_t vertical_bars_clockwise = {
     VerticalBars,

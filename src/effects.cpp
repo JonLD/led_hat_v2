@@ -199,7 +199,7 @@ void VerticalBars()
     FadeLeds(100);
 }
 
-void horizontalBars()
+void HorizontalBars()
 {
     if (isBeatDetected)
     {
