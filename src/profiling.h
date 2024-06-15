@@ -3,6 +3,8 @@
 
 #include <arduino.h>
 
+#include "timing.h"
+
 #define SCL_INDEX 0x00
 #define SCL_TIME 0x01
 #define SCL_FREQUENCY 0x02
@@ -19,13 +21,13 @@
 
 
 
-extern unsigned long lastProfilingPoint_ms;
-extern unsigned long microsNow;
+extern int64_t lastProfilingPoint_ms;
+extern int64_t microsNow;
 
 #ifdef TIME_PROFILING
 #define BPS_PROFILING
 #define EMIT_PROFILING_EVENT {\
-    microsNow = micros();\
+    microsNow = GetMicros();\
     Serial.print(microsNow - lastProfilingPoint_ms);\
     Serial.print("\t");\
     lastProfilingPoint_ms = microsNow;\
@@ -36,7 +38,7 @@ extern unsigned long microsNow;
 
 #ifdef PROFILE_MIC_READ
 #define EMIT_MIC_READ_EVENT {\
-    microsNow = micros();\
+    microsNow = GetMicros();\
     Serial.println(microsNow - lastProfilingPoint_ms);\
     lastProfilingPoint_ms = microsNow;\
 }

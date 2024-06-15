@@ -9,8 +9,8 @@
 #define FFT_SPEED_OVER_PRECISION
 #include <arduinoFFT.h>
 
-unsigned long lastProfilingPoint_ms;
-unsigned long microsNow;
+int64_t lastProfilingPoint_ms;
+int64_t microsNow;
 
 // Print various data for debugging
 void PrintVector(float *vData, uint16_t bufferSize, uint8_t scaleType)

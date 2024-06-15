@@ -9,6 +9,7 @@
 #include "effects.h"
 #include "i2s_mic.h"
 #include "interface.h"
+#include "timing.h"
 #include "profiling.h"
 
 #define AMBIENT_EFFECT_TIMEOUT_MS 1000
@@ -134,13 +135,13 @@ static void EffectSelectionEngine()
         isAmbientSection = false;
         currentEffect = beatEffectEnumValues[random(size(beatEffectEnumValues))];
     }
-    else if (millis() - lastBeatTime_ms > AMBIENT_EFFECT_TIMEOUT_MS && !isAmbientSection)
+    else if (GetMillis() - lastBeatTime_ms > AMBIENT_EFFECT_TIMEOUT_MS && !isAmbientSection)
     {
         isAmbientSection = true;
         currentEffect = ambientEffectEnumValues[random(size(ambientEffectEnumValues))];
     }
     // TODO: seems to be a bit broken with this
-    // else if (millis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)
+    // else if (GetMillis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)
     // {
     //     currentEffect = static_cast<Effect>(beatEffectEnumValues[random(size(beatEffectEnumValues))]);
     // }
