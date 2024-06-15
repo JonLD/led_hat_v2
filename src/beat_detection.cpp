@@ -6,8 +6,9 @@
 #define FFT_SPEED_OVER_PRECISION
 #include <arduinoFFT.h>
 
-#include "timing.h"
+#include "bpm_detection.h"
 #include "profiling.h"
+#include "timing.h"
 
 #define BEAT_DEBOUNCE_DURATION_MS 200
 #define MAX_BASS_FREQUENCY_HZ 140.0f
@@ -153,10 +154,9 @@ float vReal[FFT_BUFFER_LENGTH] = {0};
 ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, FFT_BUFFER_LENGTH, SAMPLING_FREQUENCY_HZ, true);
 
 static void AnalyzeFrequencyBand(freqBandData_t *);
-static inline bool IsMagAboveThreshold(freqBandData_t *);
-static inline float ProportionOfMagAboveAvg(freqBandData_t *);
+static inline bool IsMagAboveThreshold(freqBandData_t *freqBandData);
+static inline float ProportionOfMagAboveAvg(freqBandData_t *freqBandData);
 static void PopulateRealAndImag(int32_t rawMicSamples[FFT_BUFFER_LENGTH]);
-
 
 void ComputeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
 {
@@ -257,7 +257,9 @@ void DetectBeat()
 
     if (isBeatDetected)
     {
-        lastBeatTime_ms = GetMillis();
+        const int64_t nowMs = GetMillis();
+        BpmDetection_Step(nowMs);
+        lastBeatTime_ms = nowMs;
 #ifdef PRINT_BIN_MAGNITUDES
         PrintVector(vReal, NUMBER_OF_SAMPLES, SCL_FREQUENCY);
         delay(20000);

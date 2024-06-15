@@ -5,6 +5,7 @@
 #include <Wire.h>
 
 #include "beat_detection.h"
+#include "bpm_detection.h"
 #include "config.h"
 #include "effects.h"
 #include "i2s_mic.h"
@@ -213,6 +214,8 @@ void setup()
     FastLedInit();
 
     SetEffectColour();
+
+    BpmDetection_Init(GetMillis());
 }
 
 void loop()
