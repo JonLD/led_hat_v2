@@ -218,7 +218,7 @@ void pollBrightnessKnob()
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(BAUD_RATE);
     Serial.println("Setting up devic");
     setupWifiConnection();
     setupTrellisKeypad();

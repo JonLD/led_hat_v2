@@ -1,6 +1,10 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#include <Arduino.h>
+
+#define BAUD_RATE 115200
+
 #define MAX_COLOUR_KEYPAD_INDEX 15
 #define MAX_EFFECT_KEYPAD_INDEX 30
 #define AMBIENT_OVERRIDE_KEYPAD_INDEX 31
@@ -80,13 +84,6 @@ typedef struct radioData_t
     }
 } radioData_s;
 
-radioData_t radioData = {
-    .isEffectCommand = false,
-    .effect = static_cast<int8_t>(Effect::wave_flash_double),
-    .colour = static_cast<int8_t>(Colour::blue),
-    .brightness = 135,
-    .beatLength_ms = 483,
-    .ambientOverride = false,
-};
+extern radioData_t radioData;
 
-#endif
+#endif // INTERFACE_H

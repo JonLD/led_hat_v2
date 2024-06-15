@@ -1,24 +1,31 @@
 #include <Arduino.h>
 #include <esp_now.h>
+#include <FastLED.h>
 #include <WiFi.h>
 #include <Wire.h>
-#include <interface.h>
-#include <FastLED.h>
-#include <config.h>
-#include <beat_detection.h>
-#include <effects.h>
 
-uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
+#include "beat_detection.h"
+#include "config.h"
+#include "effects.h"
+#include "i2s_mic.h"
+#include "interface.h"
+#include "profiling.h"
 
-// Initialise varialbes needed for FastLED
-#define LED_TYPE WS2812B
-#define COLOR_ORDER GRB
-#define LED_DATA_PIN 22
+#define AMBIENT_EFFECT_TIMEOUT_MS 1000
+#define BEAT_EFFECT_TIMEOUT_MS 520
 
 #define PLAY_EFFECT_SEQUENCE(effect) play_effect_sequence(effect, size(effect))
 
+uint8_t com7Address[] = {0x0C, 0xB8, 0x15, 0xF8, 0xF6, 0x80};
+
 Colour currentColour = static_cast<Colour>(radioData.colour);
 Effect currentEffect = static_cast<Effect>(radioData.effect);
+
+static void setEffectColour();
+static void play_effect_sequence(effect_array_t effects_array, size_t array_size);
+static void effectSelectionEngine();
+static void playSelectedEffect();
+static void populateRadioData(const uint8_t *esp_now_info, const uint8_t *incomingData, int data_len);
 
 // for getting the length of the above effect function pointer arrays
 template <class T, size_t N>
@@ -28,11 +35,11 @@ constexpr size_t size(T (&)[N])
 }
 
 // callback function that will be executed when data is received
-void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
+static void populateRadioData(const uint8_t *esp_now_info, const uint8_t *incomingData, int data_len)
 {
     memcpy(&radioData, incomingData, sizeof(radioData_t));
     Serial.print("Bytes received: ");
-    Serial.println(len);
+    Serial.println(data_len);
     Serial.print("Effect enum: ");
     Serial.println(radioData.effect);
     Serial.print("Colour enum: ");
@@ -45,7 +52,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 //-------------- Effect Control --------------
 
 // logic for selection of different colour pallettes
-void setEffectColour()
+static void setEffectColour()
 {
     switch (currentColour)
     {
@@ -109,7 +116,7 @@ void setEffectColour()
     }
 }
 
-void play_effect_sequence(effect_array_t effects_array, size_t array_size)
+static void play_effect_sequence(effect_array_t effects_array, size_t array_size)
 {
     static int i = 0;
     if (isBeatDetected && ++i >= array_size)
@@ -119,9 +126,7 @@ void play_effect_sequence(effect_array_t effects_array, size_t array_size)
     effects_array[i]();
 }
 
-#define AMBIENT_EFFECT_TIMEOUT_MS 1000
-#define BEAT_EFFECT_TIMEOUT_MS 520
-void effectSelectionEngine()
+static void effectSelectionEngine()
 {
     static bool isAmbientSection = false;
     if (isBeatDetected && isAmbientSection)
@@ -142,7 +147,7 @@ void effectSelectionEngine()
 }
 
 // logic for selection of next pre-set effect
-void playSelectedEffect()
+static void playSelectedEffect()
 {
     switch (currentEffect)
     {
@@ -188,7 +193,7 @@ void playSelectedEffect()
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(BAUD_RATE);
 
     // Wifi Setup
     WiFi.mode(WIFI_STA); // Set device as a Wi-Fi Station
@@ -197,26 +202,16 @@ void setup()
         Serial.println("Error initializing ESP-NOW");
         return;
     }
-    // Once ESPNow is successfully Init, we will register for recv CB to
-    // get recv packer info
-    esp_now_register_recv_cb(OnDataRecv);
+    esp_now_register_recv_cb(populateRadioData);
 
-    // start up the I2S peripheral
-    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
-    i2s_set_pin(I2S_NUM_0, &i2s_mic_pins);
-
-    // FastLED setup
-    FastLED.addLeds<LED_TYPE, LED_DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-    FastLED.setBrightness(radioData.brightness);
+    i2sInit();
+    fastLedInit();
 
     setEffectColour();
 }
 
 void loop()
 {
-#ifdef PRINT_PROFILING
-    initialMicros = micros();
-#endif
     if (radioData.isEffectCommand)
     {
         radioData.isEffectCommand = false;
@@ -238,34 +233,30 @@ void loop()
         lastBrightness = radioData.brightness;
         Serial.println("setting new brightness");
     }
-#ifdef PRINT_PROFILING
-    Serial.print(" Set colour: ");
-    Serial.print(micros() - initialMicros);
-#endif
-    readMicData();
-#ifdef PRINT_PROFILING
-    Serial.print(" Assignedment: ");
-    Serial.print(micros() - initialMicros);
-#endif
-    computeFFT();
-#ifdef PRINT_PROFILING
-    Serial.print(" Analyze: ");
-    Serial.print(micros() - initialMicros);
-#endif
-    detectBeat();
+    EMIT_PROFILING_EVENT;
+    int32_t rawMicSamples[FFT_BUFFER_LENGTH];
+    if (readMicData(rawMicSamples))
+    {
+        EMIT_MIC_READ_EVENT;
+        computeFFT(rawMicSamples);
+        EMIT_PROFILING_EVENT;
+        detectBeat();
+        EMIT_PROFILING_EVENT;
+    }
     if (radioData.ambientOverride)
     {
         isBeatDetected = false;
     }
     effectSelectionEngine();
     playSelectedEffect();
-#ifdef PRINT_PROFILING
-    Serial.print(" LED: ");
-    Serial.println(micros() - initialMicros);
-#endif
+    EMIT_PROFILING_EVENT;
     EVERY_N_MILLIS(15)
     {
         FastLED.show();
     }
+    EMIT_PROFILING_EVENT;
     isBeatDetected = false;
+#ifdef BPS_PROFILING
+    Serial.print("\n");
+#endif
 }
