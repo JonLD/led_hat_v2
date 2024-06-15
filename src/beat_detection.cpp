@@ -48,7 +48,7 @@ static freqBandData_t midFreqData{
     .currentMagnitude = 0,
     .lowerBinIndex = 3,
     .upperBinIndex = 3,
-    .beatDetectThresholdCoeff = 1.5,
+    .beatDetectThresholdCoeff = 1.3,
     .leakyAverageCoeff = 0.125,
     .minMagnitude = 100000000
 };
@@ -58,8 +58,8 @@ float vReal[FFT_BUFFER_LENGTH] = {0};
 ArduinoFFT<float> FFT = ArduinoFFT<float>(vReal, vImag, FFT_BUFFER_LENGTH, SAMPLING_FREQUENCY_HZ, true);
 
 static void AnalyzeFrequencyBand(freqBandData_t *);
-static bool IsMagAboveThreshold(freqBandData_t);
-static float ProportionOfMagAboveAvg(freqBandData_t);
+static inline bool IsMagAboveThreshold(freqBandData_t *);
+static inline float ProportionOfMagAboveAvg(freqBandData_t *);
 static void PopulateRealAndImag(int32_t rawMicSamples[FFT_BUFFER_LENGTH]);
 
 
@@ -92,13 +92,13 @@ void AnalyzeFrequencyBand(freqBandData_t *freqBand)
 
 void DetectBeat()
 {
-    const bool isBassAboveAvg = IsMagAboveThreshold(bassFreqData);
-    const bool isMidAboveAvg = IsMagAboveThreshold(midFreqData);
+    const bool isBassAboveAvg = IsMagAboveThreshold(&bassFreqData);
+    const bool isMidAboveAvg = IsMagAboveThreshold(&midFreqData);
     const bool isNoRecentBeat = (GetMillis() - lastBeatTime_ms) > (BEAT_DEBOUNCE_DURATION_MS);
     const bool peakIsBass = (FFT.majorPeak() < MAX_BASS_FREQUENCY_HZ);
     const bool isAvgBassAboveMin = (bassFreqData.averageMagnitude > bassFreqData.minMagnitude);
-    const float proportionBassAboveAvg = ProportionOfMagAboveAvg(bassFreqData);
-    const float proportionMidAboveAvg = ProportionOfMagAboveAvg(midFreqData);
+    const float proportionBassAboveAvg = ProportionOfMagAboveAvg(&bassFreqData);
+    const float proportionMidAboveAvg = ProportionOfMagAboveAvg(&midFreqData);
 
     isBeatDetected = (isNoRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg);
 
@@ -147,14 +147,12 @@ static void PopulateRealAndImag(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
     EMIT_PROFILING_EVENT;
 }
 
-static bool IsMagAboveThreshold(freqBandData_t freqBandData)
+static inline bool IsMagAboveThreshold(freqBandData_t *freqBandData)
 {
-    const bool magIsAboveThreshold = (bassFreqData.currentMagnitude > (bassFreqData.averageMagnitude * bassFreqData.beatDetectThresholdCoeff));
-    return magIsAboveThreshold;
+    return (freqBandData->currentMagnitude > (freqBandData->averageMagnitude * freqBandData->beatDetectThresholdCoeff));
 }
 
-static float ProportionOfMagAboveAvg(freqBandData_t freqBandData)
+static inline float ProportionOfMagAboveAvg(freqBandData_t *freqBandData)
 {
-    const float proportionAboveAvg = (bassFreqData.currentMagnitude / bassFreqData.averageMagnitude);
-    return proportionAboveAvg;
+    return (freqBandData->currentMagnitude / freqBandData->averageMagnitude);
 }
