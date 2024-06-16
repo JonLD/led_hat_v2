@@ -27,9 +27,10 @@ static i2s_pin_config_t i2s_mic_pins = {
     .data_in_num = I2S_MIC_SERIAL_DATA
 };
 
+static QueueHandle_t i2s_event_queue;
 void I2sInit()
 {
-    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
+    i2s_driver_install(I2S_NUM_0, &i2s_config, 10, &i2s_event_queue);
     i2s_set_pin(I2S_NUM_0, &i2s_mic_pins);
 }
 
@@ -37,9 +38,15 @@ void I2sInit()
 // @param rawMicSamples[out]    Output buffer to store samples from mic in
 bool ReadMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
 {
+    bool success = false;
     size_t bytes_read = 0;
-    i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * FFT_BUFFER_LENGTH, &bytes_read, portMAX_DELAY);
-    const bool successfullyReadAllSamples = (bytes_read / sizeof(int32_t) == FFT_BUFFER_LENGTH);
+    i2s_event_t i2s_evt;
+    BaseType_t retv = xQueueReceive(i2s_event_queue, &i2s_evt, 0);
+    if ((retv == pdPASS) && (i2s_evt.type == I2S_EVENT_RX_DONE))
+    {
+        i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * FFT_BUFFER_LENGTH, &bytes_read, portMAX_DELAY);
+        success = true;
+    }
     EMIT_PROFILING_EVENT;
-    return successfullyReadAllSamples;
+    return success;
 }

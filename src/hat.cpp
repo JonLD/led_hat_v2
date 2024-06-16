@@ -238,7 +238,6 @@ void loop()
     int32_t rawMicSamples[FFT_BUFFER_LENGTH];
     if (ReadMicData(rawMicSamples))
     {
-        EMIT_MIC_READ_EVENT;
         ComputeFFT(rawMicSamples);
         EMIT_PROFILING_EVENT;
         DetectBeat();
