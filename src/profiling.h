@@ -20,7 +20,6 @@
 // #define BEAT_DETECTION_PROFILING
 
 
-
 extern int64_t lastProfilingPoint_ms;
 extern int64_t microsNow;
 

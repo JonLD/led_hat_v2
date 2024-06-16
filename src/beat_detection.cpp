@@ -70,14 +70,15 @@ void ComputeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
 
 void AnalyzeFrequencyBand(freqBandData_t *freqBand)
 {
+    const uint32_t numberOfBins = (1 + freqBand->upperBinIndex - freqBand->lowerBinIndex);
+
     // Calculate current magnitude by averaging bins in frequency range
-    freqBand->currentMagnitude = 0;
-    for (int binIndex = freqBand->lowerBinIndex; binIndex <= freqBand->upperBinIndex; ++binIndex)
+    uint32_t totalMagnitude = 0u;
+    for (uint32_t binIndex = freqBand->lowerBinIndex; binIndex <= freqBand->upperBinIndex; ++binIndex)
     {
-        freqBand->currentMagnitude += vReal[binIndex];
+        totalMagnitude += vReal[binIndex];
     }
-    uint32_t numberOfBins = (1 + freqBand->upperBinIndex - freqBand->lowerBinIndex);
-    freqBand->currentMagnitude /= numberOfBins;
+    freqBand->currentMagnitude = (float)totalMagnitude / (float)numberOfBins;
 
     // Calulate leaky average
     freqBand->averageMagnitude += (freqBand->currentMagnitude - freqBand->averageMagnitude) * (freqBand->leakyAverageCoeff);
