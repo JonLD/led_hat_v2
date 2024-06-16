@@ -13,9 +13,11 @@
 #include "profiling.h"
 #include "timing.h"
 
-#define CORE_HAT    (1u)
-#define CORE_I2S    (1u) // Core for I2S
-#define CORE_MAIN   (1u) // Core for main loop to run
+#define CORE_HAT        (1u) // Core for all other Hat functionality
+#define CORE_I2S        (1u) // Core for I2S
+#define HAT_THREAD_PRIO (1u)
+#define I2S_THREAD_PRIO (2u)
+
 #define QUEUE_LENGTH 10
 
 #define AMBIENT_EFFECT_TIMEOUT_MS 1000
@@ -284,19 +286,18 @@ void setup()
         "HatThread",
         35000,  // Experimental, no idea if this is sensible
         msgQueue,
-        0,
+        HAT_THREAD_PRIO,
         &taskHat,
         CORE_HAT);
 
     xTaskCreatePinnedToCore(
-        I2sMain,     // Function to run
-        "I2sThread", // Task name
-        9600,        // Stack size in words
-        msgQueue,    // Parameter to pass in
-        1,           // Priority
-        &taskI2s,    // Task handle out
-        CORE_I2S);   // Core binding
-
+        I2sMain,         // Function to run
+        "I2sThread",     // Task name
+        9600,            // Stack size in words
+        msgQueue,        // Parameter to pass in
+        I2S_THREAD_PRIO, // Priority
+        &taskI2s,        // Task handle out
+        CORE_I2S);       // Core binding
 }
 
 void loop()

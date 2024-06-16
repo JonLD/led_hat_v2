@@ -55,6 +55,7 @@ static bool ReadMicData(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
         i2s_read(I2S_NUM_0, rawMicSamples, sizeof(int32_t) * FFT_BUFFER_LENGTH, &bytes_read, portMAX_DELAY);
         success = true;
     }
+    EMIT_MIC_READ_EVENT;
     EMIT_PROFILING_EVENT;
     return success;
 }
