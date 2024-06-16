@@ -21,16 +21,16 @@
 
 
 
-extern int64_t lastProfilingPoint_ms;
+extern int64_t lastProfilingPoint_us;
 extern int64_t microsNow;
 
 #ifdef TIME_PROFILING
 #define BPS_PROFILING
 #define EMIT_PROFILING_EVENT {\
     microsNow = GetMicros();\
-    Serial.print(microsNow - lastProfilingPoint_ms);\
+    Serial.print(microsNow - lastProfilingPoint_us);\
     Serial.print("\t");\
-    lastProfilingPoint_ms = microsNow;\
+    lastProfilingPoint_us = microsNow;\
 }
 #else
 #define EMIT_PROFILING_EVENT do { } while(0)
@@ -39,8 +39,8 @@ extern int64_t microsNow;
 #ifdef PROFILE_MIC_READ
 #define EMIT_MIC_READ_EVENT {\
     microsNow = GetMicros();\
-    Serial.println(microsNow - lastProfilingPoint_ms);\
-    lastProfilingPoint_ms = microsNow;\
+    Serial.println(microsNow - lastProfilingPoint_us);\
+    lastProfilingPoint_us = microsNow;\
 }
 #else
 #define EMIT_MIC_READ_EVENT do { } while(0)

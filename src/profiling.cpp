@@ -9,7 +9,7 @@
 #define FFT_SPEED_OVER_PRECISION
 #include <arduinoFFT.h>
 
-int64_t lastProfilingPoint_ms;
+int64_t lastProfilingPoint_us;
 int64_t microsNow;
 
 // Print various data for debugging
