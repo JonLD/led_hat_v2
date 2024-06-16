@@ -245,7 +245,6 @@ void HatMain(void *param)
         BaseType_t result = xQueueReceive(queue, &newMsg, NON_BLOCKING);
         if (result == pdTRUE)
         {
-             EMIT_MIC_READ_EVENT;
             ComputeFFT(newMsg.rawMicSamples);
             EMIT_PROFILING_EVENT;
             DetectBeat();
