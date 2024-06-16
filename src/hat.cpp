@@ -301,5 +301,5 @@ void setup()
 
 void loop()
 {
-
+    // Everything handled by Hat and I2S thread
 }
