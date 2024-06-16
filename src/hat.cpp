@@ -119,8 +119,12 @@ static void SetEffectColour()
 
 static void PlayEffectSequence(effect_array_t effects_array, size_t array_size)
 {
-    static int i = 0;
-    if (isBeatDetected && ++i >= array_size)
+    static uint i = 0;
+    if (isBeatDetected)
+    {
+        i++;
+    }
+    if (!(i < array_size))
     {
         i = 0;
     }
