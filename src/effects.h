@@ -22,10 +22,10 @@ void WaveClockwise();
 void WaveAnticlockwise();
 
 effect_array_t no_effect = {NoEffect};
-effect_array_t twinkle_ = {Twinkle};
+effect_array_t twinkle = {Twinkle};
 effect_array_t wave_clockwise = {WaveClockwise};
 effect_array_t wave_anticlockwise = {WaveAnticlockwise};
-effect_array_t strobe_ = {Strobe};
+effect_array_t strobe = {Strobe};
 
 //-------------- Beat effect arrays --------------
 void VerticalBars();

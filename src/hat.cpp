@@ -52,68 +52,33 @@ static void PopulateRadioData(const uint8_t *esp_now_info, const uint8_t *incomi
 
 //-------------- Effect Control --------------
 
+#define CASE_SET_COLOUR(colour, col1, col2, col3) \
+    case colour:                                  \
+        colour1 = col1;                           \
+        colour2 = col2;                           \
+        colour3 = col3;                           \
+        break;                                    \
+
 // logic for selection of different colour pallettes
 static void SetEffectColour()
 {
     switch (currentColour)
     {
-    case Colour::red:
-        colour1 = colour2 = colour3 = CRGB::Red;
-        break;
-    case Colour::blue:
-        colour1 = colour2 = colour3 = CRGB::Blue;
-        break;
-    case Colour::green:
-        colour1 = colour2 = colour3 = CRGB::Green;
-        break;
-    case Colour::purple:
-        colour1 = colour2 = colour3 = CRGB::Purple;
-        break;
-    case Colour::white:
-        colour1 = colour2 = colour3 = CRGB::White;
-        break;
-    case Colour::yellow:
-        colour1 = colour2 = colour3 = CRGB::Yellow;
-        break;
-    case Colour::orange:
-        colour1 = colour2 = colour3 = CRGB::OrangeRed;
-        break;
-    case Colour::red_white:
-        colour1 = colour2 = CRGB::Red;
-        colour3 = CRGB::White;
-        break;
-    case Colour::green_white:
-        colour1 = colour2 = CRGB::Green;
-        colour3 = CRGB::White;
-        break;
-    case Colour::blue_white:
-        colour1 = colour2 = CRGB::Blue;
-        colour3 = CRGB::White;
-        break;
-    case Colour::cb:
-        colour1 = CRGB::OrangeRed;
-        colour2 = CRGB::Green;
-        colour3 = CRGB::Purple;
-        break;
-    case Colour::cd:
-        colour1 = CRGB::Yellow;
-        colour2 = CRGB::Blue;
-        colour3 = CRGB::Purple;
-        break;
-    case Colour::fire:
-        colour1 = CRGB::Yellow;
-        colour2 = CRGB::Red;
-        colour3 = CRGB::OrangeRed;
-        break;
-    case Colour::purue:
-        colour1 = CRGB::Purple;
-        colour2 = CRGB::Red;
-        colour3 = CRGB::Blue;
-        break;
-    case Colour::blue_red:
-        colour1 = colour2 = CRGB::Blue;
-        colour3 = CRGB::Red;
-        break;
+    CASE_SET_COLOUR(Colour::red, CRGB::Red, CRGB::Red, CRGB::Red);
+    CASE_SET_COLOUR(Colour::blue, CRGB::Blue, CRGB::Blue, CRGB::Blue);
+    CASE_SET_COLOUR(Colour::green, CRGB::Green, CRGB::Green, CRGB::Green);
+    CASE_SET_COLOUR(Colour::purple, CRGB::Purple, CRGB::Purple, CRGB::Purple);
+    CASE_SET_COLOUR(Colour::white, CRGB::White, CRGB::White, CRGB::White);
+    CASE_SET_COLOUR(Colour::yellow, CRGB::Yellow, CRGB::Yellow, CRGB::Yellow);
+    CASE_SET_COLOUR(Colour::orange, CRGB::OrangeRed, CRGB::OrangeRed, CRGB::OrangeRed);
+    CASE_SET_COLOUR(Colour::red_white, CRGB::Red, CRGB::Red, CRGB::White);
+    CASE_SET_COLOUR(Colour::green_white, CRGB::Green, CRGB::Green, CRGB::White);
+    CASE_SET_COLOUR(Colour::blue_white, CRGB::Blue, CRGB::Blue, CRGB::White);
+    CASE_SET_COLOUR(Colour::cb, CRGB::OrangeRed, CRGB::Green, CRGB::Purple);
+    CASE_SET_COLOUR(Colour::cd, CRGB::Yellow, CRGB::Blue, CRGB::Purple);
+    CASE_SET_COLOUR(Colour::fire, CRGB::Yellow, CRGB::Red, CRGB::OrangeRed);
+    CASE_SET_COLOUR(Colour::purue, CRGB::Purple, CRGB::Red, CRGB::Blue);
+    CASE_SET_COLOUR(Colour::blue_red, CRGB::Blue, CRGB::Blue, CRGB::Red);
     }
 }
 
@@ -147,47 +112,28 @@ static void EffectSelectionEngine()
     // }
 }
 
+#define CASE_PLAY_EFFECT(name)      \
+    case Effect::name:              \
+        PLAY_EFFECT_SEQUENCE(name); \
+        return;                     \
+
 // logic for selection of next pre-set effect
 static void PlaySelectedEffect()
 {
     switch (currentEffect)
     {
-    case Effect::wave_flash_double:
-        PLAY_EFFECT_SEQUENCE(wave_flash_double);
-        return;
-    case Effect::vertical_bars_clockwise:
-        PLAY_EFFECT_SEQUENCE(vertical_bars_clockwise);
-        return;
-    case Effect::wave_up:
-        PLAY_EFFECT_SEQUENCE(wave_up);
-        return;
-    case Effect::wave_down:
-        PLAY_EFFECT_SEQUENCE(wave_down);
-        return;
-    case Effect::wave_up_down:
-        PLAY_EFFECT_SEQUENCE(wave_up_down);
-        return;
-    case Effect::random_cross:
-        PLAY_EFFECT_SEQUENCE(random_cross);
-        return;
-    case Effect::horizontal_ray:
-        PLAY_EFFECT_SEQUENCE(horizontal_ray);
-        return;
-    case Effect::strobe:
-        PLAY_EFFECT_SEQUENCE(strobe_);
-        return;
-    case Effect::wave_anticlockwise:
-        PLAY_EFFECT_SEQUENCE(wave_anticlockwise);
-        return;
-    case Effect::wave_clockwise:
-        PLAY_EFFECT_SEQUENCE(wave_clockwise);
-        return;
-    case Effect::twinkle:
-        PLAY_EFFECT_SEQUENCE(twinkle_);
-        return;
-    case Effect::no_effect:
-        PLAY_EFFECT_SEQUENCE(no_effect);
-        return;
+    CASE_PLAY_EFFECT(wave_flash_double);
+    CASE_PLAY_EFFECT(vertical_bars_clockwise);
+    CASE_PLAY_EFFECT(wave_up);
+    CASE_PLAY_EFFECT(wave_down);
+    CASE_PLAY_EFFECT(wave_up_down);
+    CASE_PLAY_EFFECT(random_cross);
+    CASE_PLAY_EFFECT(horizontal_ray);
+    CASE_PLAY_EFFECT(strobe);
+    CASE_PLAY_EFFECT(wave_anticlockwise);
+    CASE_PLAY_EFFECT(wave_clockwise);
+    CASE_PLAY_EFFECT(twinkle);
+    CASE_PLAY_EFFECT(no_effect);
     }
     Serial.println("Effect not found!");
 }
