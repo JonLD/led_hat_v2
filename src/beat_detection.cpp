@@ -12,11 +12,70 @@
 #define BEAT_DEBOUNCE_DURATION_MS 200
 #define MAX_BASS_FREQUENCY_HZ 140.0f
 
+#define HISTORICAL_DATA_LENGTH 3
+#define HISTORICAL_VAR_LENGTH 3
+
+template <typename T, size_t N>
+class HistoricData {
+    public:
+        T data[N] = { 0 };
+        int frontIdx = 0;
+        int rearIdx = N-1;
+        T mean = 0;
+        float variance = 0.0;
+
+        void update(T sample)
+        {
+            insert(sample);
+            mean = Mean();
+            variance = Variance();
+        }
+
+    private:
+        void insert(T sample) 
+        {
+            if(++rearIdx == N) {
+                rearIdx = 0;
+            }
+            if(++frontIdx == N) {
+                frontIdx = 0;
+            }
+            data[rearIdx] = sample;
+        }
+
+        uint64_t TotalMagnitute(void)
+        {
+            uint64_t sum = 0;
+            for(int i = 0; i<N ; i++){
+                sum+=(uint64_t)data[i];
+            }
+            return sum;
+        }
+
+        T Mean(void)
+        {
+            return TotalMagnitute() / N;
+        }
+
+        float Variance(void)
+        {
+            mean = Mean();
+            uint64_t squaredDifferenceSum = 0;
+            for(int i = 0; i < N ; i++)
+            {
+                squaredDifferenceSum+= data[i]*data[i];
+            }
+            return sqrt((double)(squaredDifferenceSum / N));
+        }
+};
+
+
 unsigned long lastBeatTime_ms = 0;
 bool isBeatDetected = false;
 
 typedef struct freqBandData_t
 {
+    HistoricData<uint64_t, HISTORICAL_DATA_LENGTH> historicData;
     float averageMagnitude;
     float currentMagnitude;
     uint32_t lowerBinIndex;
@@ -24,6 +83,7 @@ typedef struct freqBandData_t
     float beatDetectThresholdCoeff;
     float leakyAverageCoeff;
     float minMagnitude;
+    uint32_t varianceThreshold;
 } freqBandData_s;
 
 static freqBandData_t bassFreqData{
@@ -33,7 +93,8 @@ static freqBandData_t bassFreqData{
     .upperBinIndex = 2,
     .beatDetectThresholdCoeff = 1.4,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 100000000
+    .minMagnitude = 40000000,
+    .varianceThreshold = 400000000
 };
 
 static freqBandData_t midFreqData{
@@ -43,7 +104,9 @@ static freqBandData_t midFreqData{
     .upperBinIndex = 3,
     .beatDetectThresholdCoeff = 1.3,
     .leakyAverageCoeff = 0.125,
-    .minMagnitude = 100000000
+    .minMagnitude = 40000000,
+    .varianceThreshold = 400000000
+
 };
 
 float vImag[FFT_BUFFER_LENGTH] = {0};
@@ -68,7 +131,7 @@ void ComputeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
     AnalyzeFrequencyBand(&midFreqData);
 }
 
-void AnalyzeFrequencyBand(freqBandData_t *freqBand)
+static void AnalyzeFrequencyBand(freqBandData_t *freqBand)
 {
     // Calculate current magnitude by averaging bins in frequency range
     freqBand->currentMagnitude = 0;
@@ -78,6 +141,8 @@ void AnalyzeFrequencyBand(freqBandData_t *freqBand)
     }
     uint32_t numberOfBins = (1 + freqBand->upperBinIndex - freqBand->lowerBinIndex);
     freqBand->currentMagnitude /= numberOfBins;
+    freqBand->historicData.update(freqBand->currentMagnitude);
+
 
     // Calulate leaky average
     freqBand->averageMagnitude += (freqBand->currentMagnitude - freqBand->averageMagnitude) * (freqBand->leakyAverageCoeff);
@@ -92,6 +157,10 @@ void DetectBeat()
     const bool isAvgBassAboveMin = (bassFreqData.averageMagnitude > bassFreqData.minMagnitude);
     const float proportionBassAboveAvg = ProportionOfMagAboveAvg(&bassFreqData);
     const float proportionMidAboveAvg = ProportionOfMagAboveAvg(&midFreqData);
+  
+    Serial.printf("%f\t", bassFreqData.historicData.variance);
+    Serial.println(midFreqData.historicData.variance);
+
 
     isBeatDetected = (isNoRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin && isMidAboveAvg);
 
