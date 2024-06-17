@@ -230,7 +230,7 @@ void DetectBeat()
     Serial.print("\n");
 
 
-    isBeatDetected = (recencyFactor * bassVarfactor * subVarfactor > 0.3) && peakIsBass && isAvgBassAboveMin;
+    isBeatDetected = (recencyFactor * bassVarfactor * subVarfactor > 0.25) && peakIsBass && isAvgBassAboveMin;
         // isNoRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin 
                     //   && isMidAboveAvg);
 
