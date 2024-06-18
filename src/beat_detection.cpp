@@ -197,10 +197,12 @@ float VarFactor(freqBandData_t *freqBand)
 float RecencyFactor() 
 {
     float recencyFactor = 1;
-    int referenceDuration = MINIMUM_DELAY_BETWEEN_BEATS - SINGLE_BEAT_DURATION_MS;
-    recencyFactor = 1 - ((float) referenceDuration / (GetMillis() - lastBeatTime_ms));
+    float referenceDuration = (60000.0 / bpmState.currentBpmEstimate) - 30;
+    recencyFactor =  (millis() - lastBeatTime_ms) / referenceDuration;
+    Serial.printf("%f\t", (float)bpmState.currentBpmEstimate);
+
     recencyFactor = constrain(recencyFactor, 0, 1);
-    return recencyFactor; 
+    return recencyFactor * recencyFactor * recencyFactor; 
 }
 
 void DetectBeat()
@@ -215,6 +217,7 @@ void DetectBeat()
     const bool bassVarAboveThreshold = subFreqData.historicMag.variance > subFreqData.varianceThreshold;
     const bool midVarAboveThreshold = midFreqData.historicMag.variance > midFreqData.varianceThreshold;
     float recencyFactor = RecencyFactor();
+    Serial.printf("%f\t", recencyFactor);
     float subVarfactor = VarFactor(&subFreqData);
     float bassVarfactor = VarFactor(&bassFreqData);
 
@@ -230,7 +233,7 @@ void DetectBeat()
     Serial.print("\n");
 
 
-    isBeatDetected = (recencyFactor * bassVarfactor * subVarfactor > 0.25) && peakIsBass && isAvgBassAboveMin;
+    isBeatDetected = (recencyFactor * bassVarfactor * subVarfactor > 0.25) && peakIsBass && isAvgBassAboveMin && isNoRecentBeat;
         // isNoRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin 
                     //   && isMidAboveAvg);
 

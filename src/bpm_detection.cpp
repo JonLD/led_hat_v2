@@ -5,14 +5,10 @@ Tries to be robust to intermediate "groove" beats.
 #include <stdint.h>
 #include <Arduino.h>
 
+#include "bpm_detection.h"
+
 typedef float float32_t;
 
-// Number of samples on which to base our BPM detection
-#define NUM_BPM_SAMPLES (100u)
-
-// Convert from a bpm to a millisecond interval and back
-#define BPM_TO_MS(bpm) (60000u / bpm)
-#define MS_TO_BPM(ms)  (60000u / ms)
 
 // Minimum and maximum BPM we'll allow as a "valid" reading
 #define MIN_BPM_DETECTABLE (110u)
@@ -23,13 +19,12 @@ typedef float float32_t;
 #define MIN_ALLOWED_INTERVAL BPM_TO_MS(MAX_BPM_DETECTABLE)
 
 // Stores data related to our BPM estimate
-typedef struct {
-    uint32_t currentBpmEstimate;
-    uint32_t lastInRangeBpmValues[NUM_BPM_SAMPLES];
-    int64_t lastBeatTime;
-} BpmDetectionState_t;
 
-BpmDetectionState_t bpmState = {0};
+BpmDetectionState_t bpmState = {
+    .currentBpmEstimate = 124,
+    .lastInRangeBpmValues = { 0 },
+    .lastBeatTime = 0
+};
 
 // A wrapping increment; adds one to val but wraps to 0 if it tries to exceed lim
 #define WRAPPING_INC(val, lim) val = ((val + 1u) % lim)
@@ -69,7 +64,6 @@ void BpmDetection_Step(int64_t nowMs)
     }
     if (totalBeats > 0)
     {
-        bpmState.currentBpmEstimate = beatAcc / totalBeats;
+        bpmState.currentBpmEstimate = (float)beatAcc / totalBeats;
     }
-    Serial.printf("%u\t%u\n", beatIntervalMs, bpmState.currentBpmEstimate);
 }
