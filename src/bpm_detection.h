@@ -7,7 +7,7 @@ void BpmDetection_Init(int64_t nowMs);
 void BpmDetection_Step(int64_t nowMs);
 
 // Number of samples on which to base our BPM detection
-#define NUM_BPM_SAMPLES (100u)
+#define NUM_BPM_SAMPLES (150u)
 
 // Convert from a bpm to a millisecond interval and back
 #define BPM_TO_MS(bpm) (60000u / bpm)

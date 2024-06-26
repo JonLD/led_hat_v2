@@ -13,8 +13,8 @@
 #define BEAT_DEBOUNCE_DURATION_MS 200
 #define MAX_BASS_FREQUENCY_HZ 140.0f
 
-#define HISTORICAL_MAG_LENGTH 3
-#define HISTORIC_VAR_LENGTH 100
+#define HISTORICAL_MAG_LENGTH 1
+#define HISTORIC_VAR_LENGTH 40
 
 #define MAXIMUM_BPM                 155u
 #define MINIMUM_DELAY_BETWEEN_BEATS (60000 / MAXIMUM_BPM)
@@ -28,7 +28,7 @@ class HistoricData {
         int frontIdx = 0;
         int rearIdx = N-1;
         T mean = 0;
-        float variance = 0.0;
+        float energy = 0.0;
         T recent_max = 0;
 
 
@@ -36,7 +36,7 @@ class HistoricData {
         {
             insert(sample);
             mean = Mean();
-            variance = Variance();
+            energy = Energy();
             recent_max = max_element();
         }
 
@@ -61,11 +61,11 @@ class HistoricData {
             data[frontIdx] = sample;
         }
 
-        uint64_t TotalMagnitute(void)
+        float TotalMagnitute(void)
         {
-            uint64_t sum = 0;
+            float sum = 0;
             for(int i = 0; i<N ; i++){
-                sum+=(uint64_t)data[i];
+                sum+=(float)data[i];
             }
             return sum;
         }
@@ -76,15 +76,15 @@ class HistoricData {
         }
 
 
-        float Variance(void)
+        float Energy(void)
         {
             mean = Mean();
-            uint64_t squaredDifferenceSum = 0;
+            float squaredDifferenceSum = 0;
             for(int i = 0; i < N ; i++)
             {
                 squaredDifferenceSum+= data[i]*data[i];
             }
-            return sqrt((double)(squaredDifferenceSum / N));
+            return (double)(squaredDifferenceSum / N);
         }
 };
 
@@ -95,13 +95,13 @@ bool isBeatDetected = false;
 
 typedef struct freqBandData_t
 {
-    HistoricData<uint64_t, HISTORICAL_MAG_LENGTH> historicMag;
-    HistoricData<uint64_t, HISTORIC_VAR_LENGTH> historicVar;
+    HistoricData<float, HISTORICAL_MAG_LENGTH> historicMag;
+    HistoricData<float, HISTORIC_VAR_LENGTH> historicEnergy;
     float averageMagnitude;
     float currentMagnitude;
     float averageVariance;
-    uint32_t lowerBinIndex;
-    uint32_t upperBinIndex;
+    uint8_t lowerBinIndex;
+    uint8_t upperBinIndex;
     float beatDetectThresholdCoeff;
     float leakyAverageCoeff;
     float minMagnitude;
@@ -112,20 +112,20 @@ static freqBandData_t subFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
     .lowerBinIndex = 1,
-    .upperBinIndex = 2,
+    .upperBinIndex = 1,
     .beatDetectThresholdCoeff = 1.2,
-    .leakyAverageCoeff = 0.125,
-    .minMagnitude = 40000000,
+    .leakyAverageCoeff = 0.100,
+    .minMagnitude = 100000000,
     .varianceThreshold = 200000000
 };
 
 static freqBandData_t bassFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
-    .lowerBinIndex = 3,
-    .upperBinIndex = 3,
+    .lowerBinIndex = 2,
+    .upperBinIndex = 2,
     .beatDetectThresholdCoeff = 1.2,
-    .leakyAverageCoeff = 0.125,
+    .leakyAverageCoeff = 0.100,
     .minMagnitude = 40000000,
     .varianceThreshold = 200000000
 
@@ -134,10 +134,10 @@ static freqBandData_t bassFreqData{
 static freqBandData_t midFreqData{
     .averageMagnitude = 0,
     .currentMagnitude = 0,
-    .lowerBinIndex = 4,
-    .upperBinIndex = 4,
+    .lowerBinIndex = 3,
+    .upperBinIndex = 3,
     .beatDetectThresholdCoeff = 1.2,
-    .leakyAverageCoeff = 0.125,
+    .leakyAverageCoeff = 0.100,
     .minMagnitude = 40000000,
     .varianceThreshold = 200000000
 
@@ -162,7 +162,7 @@ void ComputeFFT(int32_t rawMicSamples[FFT_BUFFER_LENGTH])
 {
     PopulateRealAndImag(rawMicSamples);
     FFT.dcRemoval();
-    FFT.windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
+    FFT.windowing(FFTWindow::Rectangle, FFTDirection::Forward);
     FFT.compute(FFTDirection::Forward);
     FFT.complexToMagnitude();
 
@@ -182,15 +182,21 @@ static void AnalyzeFrequencyBand(freqBandData_t *freqBand)
     uint32_t numberOfBins = (1 + freqBand->upperBinIndex - freqBand->lowerBinIndex);
     freqBand->currentMagnitude /= numberOfBins;
     freqBand->historicMag.Update(freqBand->currentMagnitude);
-    freqBand->historicVar.Update(freqBand->historicMag.variance);
+    freqBand->historicEnergy.Update(freqBand->historicMag.energy);
     
     // Calulate leaky average
-    freqBand->averageMagnitude += (freqBand->currentMagnitude - freqBand->averageMagnitude) * (freqBand->leakyAverageCoeff);
+    freqBand->averageMagnitude = (freqBand->averageMagnitude * (HISTORIC_VAR_LENGTH-1) / HISTORIC_VAR_LENGTH) + freqBand->currentMagnitude / HISTORIC_VAR_LENGTH;
 }
 
-float VarFactor(freqBandData_t *freqBand)
+float NormaliseEnergy(freqBandData_t *freqBand)
 {
-    return freqBand->historicMag.variance / freqBand->historicVar.recent_max;
+    return freqBand->historicMag.energy / freqBand->historicEnergy.recent_max;
+    
+}
+
+float PropEnergyOverMean(freqBandData_t *freqBand)
+{
+    return freqBand->historicMag.energy / freqBand->historicEnergy.mean;
     
 }
 
@@ -212,28 +218,30 @@ void DetectBeat()
     const bool isNoRecentBeat = (GetMillis() - lastBeatTime_ms) > (BEAT_DEBOUNCE_DURATION_MS);
     const bool peakIsBass = (FFT.majorPeak() < MAX_BASS_FREQUENCY_HZ);
     const bool isAvgBassAboveMin = (subFreqData.averageMagnitude > subFreqData.minMagnitude);
-    const float proportionBassAboveAvg = ProportionOfMagAboveAvg(&subFreqData);
-    const float proportionMidAboveAvg = ProportionOfMagAboveAvg(&bassFreqData);
-    const bool bassVarAboveThreshold = subFreqData.historicMag.variance > subFreqData.varianceThreshold;
-    const bool midVarAboveThreshold = midFreqData.historicMag.variance > midFreqData.varianceThreshold;
+    const float proportionSubAboveAvg = PropEnergyOverMean(&subFreqData);
+    const float proportionBassAboveAvg = PropEnergyOverMean(&bassFreqData);
+    const float proportionMidAboveAvg = PropEnergyOverMean(&midFreqData);
+    const bool bassVarAboveThreshold = subFreqData.historicMag.energy > subFreqData.varianceThreshold;
+    const bool midVarAboveThreshold = midFreqData.historicMag.energy > midFreqData.varianceThreshold;
     float recencyFactor = RecencyFactor();
-    Serial.printf("%f\t", recencyFactor);
-    float subVarfactor = VarFactor(&subFreqData);
-    float bassVarfactor = VarFactor(&bassFreqData);
+    float subVarfactor = NormaliseEnergy(&subFreqData);
+    float bassVarfactor = NormaliseEnergy(&bassFreqData);
+    float midfactor = NormaliseEnergy(&bassFreqData);
 
 
-    Serial.printf("%f", recencyFactor * bassVarfactor * subVarfactor);
+    Serial.printf("%f\t%f\t%f\t", proportionSubAboveAvg, proportionBassAboveAvg, proportionMidAboveAvg);
 
-    // Serial.printf("%f\t", subFreqData.historicMag.variance);
-    // Serial.printf("%f\t", bassFreqData.historicMag.variance);
-    // Serial.printf("%f\t", midFreqData.historicMag.variance);
-    // Serial.printf("%f\t", subFreqData.historicVar.variance);
-    // Serial.printf("%f\t", bassFreqData.historicVar.variance);
-    // Serial.printf("%f\t", midFreqData.historicVar.variance);
+    Serial.printf("%f\t", proportionSubAboveAvg + proportionBassAboveAvg);
+    Serial.printf("%f\t", subFreqData.averageMagnitude);
+    // Serial.printf("%f\t", bassFreqData.historicMag.energy);
+    // Serial.printf("%f\t", midFreqData.historicMag.energy);
+    // Serial.printf("%f\t", subFreqData.historicEnergy.energy);
+    // Serial.printf("%f\t", bassFreqData.historicEnergy.energy);
+    // Serial.printf("%f\t", midFreqData.historicEnergy.energy);
     Serial.print("\n");
 
 
-    isBeatDetected = (recencyFactor * bassVarfactor * subVarfactor > 0.25) && peakIsBass && isAvgBassAboveMin && isNoRecentBeat;
+    isBeatDetected = (proportionSubAboveAvg > 2) && peakIsBass && isAvgBassAboveMin && isNoRecentBeat;
         // isNoRecentBeat && isBassAboveAvg && peakIsBass && isAvgBassAboveMin 
                     //   && isMidAboveAvg);
 
