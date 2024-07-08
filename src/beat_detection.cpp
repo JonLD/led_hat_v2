@@ -15,13 +15,14 @@
 
 #define HISTORICAL_MAG_LENGTH 1
 #define HISTORIC_ENERGY_LENGTH 50
+#define HISTORIC_ENERGY_LONG_LENGTH 4000
 
 
 template <size_t N>
 class HistoricData {
     public:
         float data[N] = { 0 };
-        int readIdx = 0;
+        int rearIdx = 0;
         float mean = 0;
         float energy = 0.0;
         float recent_max = 0;
@@ -64,11 +65,11 @@ class HistoricData {
 
         void Insert(float sample) 
         {
-            if(++readIdx == N) 
+            if(++rearIdx == N) 
             {
-                readIdx = 0;
+                rearIdx = 0;
             }
-            data[readIdx] = sample;
+            data[rearIdx] = sample;
         }
 
         float Mean(void)
@@ -111,6 +112,7 @@ typedef struct freqBandData_t
 {
     HistoricData<HISTORICAL_MAG_LENGTH> historicMag;
     HistoricData<HISTORIC_ENERGY_LENGTH> historicEnergy;
+    HistoricData<HISTORIC_ENERGY_LONG_LENGTH> historicEnergyLong;
     float averageMagnitude;
     float currentMagnitude;
     float averageVariance;
@@ -124,7 +126,7 @@ static freqBandData_t subFreqData{
     .currentMagnitude = 0,
     .binIndex = 1,
     .beatDetectThresholdCoeff = 1.2,
-    .minMagnitude = 80000000,
+    .minMagnitude = 200000000,
 };
 
 float vImag[FFT_BUFFER_LENGTH] = {0};
@@ -155,14 +157,25 @@ static void AnalyzeFrequencyBand(freqBandData_t *freqBand)
     freqBand->currentMagnitude = vReal[freqBand->binIndex];
     freqBand->historicMag.Update(freqBand->currentMagnitude);
     freqBand->historicEnergy.Update(freqBand->historicMag.energy);
-    
+    freqBand->historicEnergyLong.Update(freqBand->historicMag.energy);
+
     // Calulate leaky average
     freqBand->averageMagnitude = (freqBand->averageMagnitude * (HISTORIC_ENERGY_LENGTH-1) / HISTORIC_ENERGY_LENGTH) + freqBand->currentMagnitude / HISTORIC_ENERGY_LENGTH;
 }
 
 float PropEnergyOverMean(freqBandData_t *freqBand)
 {
-    return freqBand->historicMag.energy / freqBand->historicEnergy.mean;
+    float mean;
+    if (GetMillis() - lastBeatTime_ms > 500)
+    {
+        mean = freqBand->historicEnergyLong.mean;
+    }
+    else
+    {
+        mean = freqBand->historicEnergy.mean;
+    }
+
+    return freqBand->historicMag.energy / mean;
     
 }
 
@@ -182,7 +195,7 @@ void DetectBeat()
     const bool isBassAboveAvg = IsMagAboveThreshold(&subFreqData);
     const bool isNoRecentBeat = (GetMillis() - lastBeatTime_ms) > (BEAT_DEBOUNCE_DURATION_MS);
     const bool peakIsBass = (FFT.majorPeak() < MAX_BASS_FREQUENCY_HZ);
-    const bool isAvgBassAboveMin = (subFreqData.historicEnergy.mean > subFreqData.minMagnitude);
+    const bool isAvgBassAboveMin = (subFreqData.averageMagnitude > subFreqData.minMagnitude);
     const float proportionSubAboveAvg = PropEnergyOverMean(&subFreqData);
 
     Serial.printf("%f\t%f\t%f\t", proportionSubAboveAvg);
