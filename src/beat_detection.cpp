@@ -198,9 +198,9 @@ void DetectBeat()
     const bool isAvgBassAboveMin = (subFreqData.averageMagnitude > subFreqData.minMagnitude);
     const float proportionSubAboveAvg = PropEnergyOverMean(&subFreqData);
 
-    Serial.printf("%f\t%f\t%f\t", proportionSubAboveAvg);
-    Serial.printf("%f\t", subFreqData.averageMagnitude);
-    Serial.print("\n");
+    // Serial.printf("%f\t%f\t%f\t", proportionSubAboveAvg);
+    // Serial.printf("%f\t", subFreqData.averageMagnitude);
+    // Serial.print("\n");
 
     isBeatDetected = (proportionSubAboveAvg > 2) && peakIsBass && isAvgBassAboveMin && isNoRecentBeat;
 
