@@ -184,7 +184,6 @@ float RecencyFactor()
     float recencyFactor = 1;
     float referenceDuration = (60000.0 / bpmState.currentBpmEstimate) - 30;
     recencyFactor =  (millis() - lastBeatTime_ms) / referenceDuration;
-    Serial.printf("%f\t", (float)bpmState.currentBpmEstimate);
 
     recencyFactor = constrain(recencyFactor, 0, 1);
     return recencyFactor * recencyFactor * recencyFactor; 
