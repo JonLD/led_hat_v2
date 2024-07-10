@@ -156,7 +156,7 @@ void setupWifiConnection()
     }
 }
 
-void trySend()
+void TrySend()
 {
     static radioData_t oldRadioData = radioData;
     if (!(oldRadioData == radioData))
@@ -230,5 +230,5 @@ void loop()
 {
     trellis.read();
     pollBrightnessKnob();
-    trySend();
+    TrySend();
 }
