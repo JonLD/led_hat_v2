@@ -3,6 +3,7 @@
 #include <arduino.h>
 
 radioData_t radioData = {
+    .beatDetected = false,
     .isEffectCommand = false,
     .effect = static_cast<int8_t>(Effect::wave_up_down),
     .colour = static_cast<int8_t>(Colour::blue),

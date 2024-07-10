@@ -65,6 +65,7 @@ const Effect ambientEffectEnumValues[] = {
 
 typedef struct radioData_t
 {
+    bool beatDetected;
     bool isEffectCommand;
     int8_t effect;
     int8_t colour;
@@ -75,6 +76,7 @@ typedef struct radioData_t
     bool operator==(const radioData_t &other) const
     {
         return (
+            beatDetected == other.beatDetected &&
             isEffectCommand == other.isEffectCommand &&
             effect == other.effect &&
             colour == other.colour &&
