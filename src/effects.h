@@ -91,4 +91,26 @@ effect_array_t horizontal_ray = {
     HorizontalRay,
 };
 
+#ifdef ADVANCED_JELLYFISH_GEOMETRY
+//-------------- Advanced Jellyfish effects --------------
+void TentacleWave();
+void RimBlink();
+void TentacleWaveToRim();
+void AlternatingTentacleBlink();
+
+effect_array_t tentacle_wave = {
+    TentacleWave,
+};
+effect_array_t tentacle_wave_rim_sequence = {
+    TentacleWave,
+    RimBlink,
+};
+effect_array_t tentacle_wave_to_rim = {
+    TentacleWaveToRim,
+};
+effect_array_t alternating_tentacle_blink = {
+    AlternatingTentacleBlink,
+};
+#endif // ADVANCED_JELLYFISH_GEOMETRY
+
 #endif // EFFECTS_H

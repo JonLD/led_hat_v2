@@ -1,6 +1,10 @@
 #include "effects.h"
 #include "interface.h"
 
+#ifdef ADVANCED_JELLYFISH_GEOMETRY
+#include "advanced_geometry.h"
+#endif
+
 // Initialise varialbes needed for FastLED
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
@@ -324,12 +328,286 @@ void ControlLed(bool beatDetected)
     }
 }
 
+#ifdef ADVANCED_JELLYFISH_GEOMETRY
+
+// Advanced jellyfish effects using section-based geometry
+
+void TentacleWave()
+{
+    static int16_t wave_position = -1;
+    
+    if (isBeatDetected)
+    {
+        wave_position = 0;
+    }
+    
+    if (wave_position >= 0 && wave_position < CENTER_TENTACLE_LENGTH)
+    {
+        EVERY_N_MILLISECONDS(40)
+        {
+            // Wave down center tentacle
+            int center_down_leds[CENTER_TENTACLE_LENGTH];
+            int center_down_count;
+            GetCenterTentacleDownLEDs(center_down_leds, &center_down_count);
+            
+            if (wave_position < center_down_count)
+            {
+                leds[center_down_leds[wave_position]] = colour1;
+            }
+            
+            // Wave down all edge tentacles simultaneously
+            for (int t = 0; t < NUM_EDGE_TENTACLES; t++)
+            {
+                int edge_down_leds[EDGE_TENTACLE_LENGTH];
+                int edge_down_count;
+                GetEdgeTentacleDownLEDs(t, edge_down_leds, &edge_down_count);
+                
+                if (wave_position < edge_down_count)
+                {
+                    leds[edge_down_leds[wave_position]] = colour2;
+                }
+            }
+            
+            wave_position++;
+        }
+    }
+    else if (wave_position >= CENTER_TENTACLE_LENGTH && wave_position < CENTER_TENTACLE_LENGTH * 2)
+    {
+        EVERY_N_MILLISECONDS(40)
+        {
+            int up_pos = wave_position - CENTER_TENTACLE_LENGTH;
+            
+            // Wave up center tentacle
+            int center_up_leds[CENTER_TENTACLE_LENGTH];
+            int center_up_count;
+            GetCenterTentacleUpLEDs(center_up_leds, &center_up_count);
+            
+            if (up_pos < center_up_count)
+            {
+                leds[center_up_leds[up_pos]] = colour1;
+            }
+            
+            // Wave up all edge tentacles simultaneously
+            for (int t = 0; t < NUM_EDGE_TENTACLES; t++)
+            {
+                int edge_up_leds[EDGE_TENTACLE_LENGTH];
+                int edge_up_count;
+                GetEdgeTentacleUpLEDs(t, edge_up_leds, &edge_up_count);
+                
+                if (up_pos < edge_up_count)
+                {
+                    leds[edge_up_leds[up_pos]] = colour2;
+                }
+            }
+            
+            wave_position++;
+        }
+    }
+    else if (wave_position >= CENTER_TENTACLE_LENGTH * 2)
+    {
+        wave_position = -1; // Reset for next beat
+    }
+    
+    FadeLeds(80);
+}
+
+void RimBlink()
+{
+    static bool blink_on = false;
+    static unsigned long last_blink = 0;
+    
+    if (isBeatDetected)
+    {
+        blink_on = true;
+        last_blink = GetMillis();
+        
+        // Light up all rim LEDs
+        int rim_leds[TOTAL_RIM_LEDS];
+        int rim_count;
+        GetRimLEDs(rim_leds, &rim_count);
+        
+        for (int i = 0; i < rim_count; i++)
+        {
+            leds[rim_leds[i]] = colour3;
+        }
+        
+        // Light up connector LEDs too
+        int connector_leds[CENTER_TO_RIM_CONNECTOR_LEDS];
+        int connector_count;
+        GetConnectorLEDs(connector_leds, &connector_count);
+        
+        for (int i = 0; i < connector_count; i++)
+        {
+            leds[connector_leds[i]] = colour3;
+        }
+    }
+    
+    // Turn off after 100ms
+    if (blink_on && (GetMillis() - last_blink) > 100)
+    {
+        int rim_leds[TOTAL_RIM_LEDS];
+        int rim_count;
+        GetRimLEDs(rim_leds, &rim_count);
+        
+        for (int i = 0; i < rim_count; i++)
+        {
+            leds[rim_leds[i]] = CRGB::Black;
+        }
+        
+        int connector_leds[CENTER_TO_RIM_CONNECTOR_LEDS];
+        int connector_count;
+        GetConnectorLEDs(connector_leds, &connector_count);
+        
+        for (int i = 0; i < connector_count; i++)
+        {
+            leds[connector_leds[i]] = CRGB::Black;
+        }
+        
+        blink_on = false;
+    }
+    
+    FadeLeds(20);
+}
+
+void TentacleWaveToRim()
+{
+    static int16_t wave_position = -1;
+    
+    if (isBeatDetected)
+    {
+        wave_position = 0;
+    }
+    
+    if (wave_position >= 0 && wave_position < CENTER_TENTACLE_LENGTH)
+    {
+        EVERY_N_MILLISECONDS(30)
+        {
+            // Wave up center tentacle
+            int center_up_leds[CENTER_TENTACLE_LENGTH];
+            int center_up_count;
+            GetCenterTentacleUpLEDs(center_up_leds, &center_up_count);
+            
+            if (wave_position < center_up_count)
+            {
+                leds[center_up_leds[wave_position]] = colour1;
+            }
+            
+            // Wave up all edge tentacles simultaneously  
+            for (int t = 0; t < NUM_EDGE_TENTACLES; t++)
+            {
+                int edge_up_leds[EDGE_TENTACLE_LENGTH];
+                int edge_up_count;
+                GetEdgeTentacleUpLEDs(t, edge_up_leds, &edge_up_count);
+                
+                if (wave_position < edge_up_count)
+                {
+                    leds[edge_up_leds[wave_position]] = colour2;
+                }
+            }
+            
+            wave_position++;
+        }
+    }
+    else if (wave_position == CENTER_TENTACLE_LENGTH)
+    {
+        // Wave has reached the top - light up the rim and connector
+        int rim_leds[TOTAL_RIM_LEDS];
+        int rim_count;
+        GetRimLEDs(rim_leds, &rim_count);
+        
+        for (int i = 0; i < rim_count; i++)
+        {
+            leds[rim_leds[i]] = colour3;
+        }
+        
+        int connector_leds[CENTER_TO_RIM_CONNECTOR_LEDS];
+        int connector_count;
+        GetConnectorLEDs(connector_leds, &connector_count);
+        
+        for (int i = 0; i < connector_count; i++)
+        {
+            leds[connector_leds[i]] = colour3;
+        }
+        
+        wave_position++;
+    }
+    else if (wave_position > CENTER_TENTACLE_LENGTH)
+    {
+        wave_position = -1; // Reset for next beat
+    }
+    
+    FadeLeds(60);
+}
+
+void AlternatingTentacleBlink()
+{
+    static bool alternate = false;
+    
+    if (isBeatDetected)
+    {
+        alternate = !alternate; // Switch which tentacles to light
+        
+        // Always light up center tentacle
+        int center_leds[CENTER_TENTACLE_LEDS];
+        int center_count;
+        GetCenterTentacleLEDs(center_leds, &center_count);
+        
+        for (int i = 0; i < center_count; i++)
+        {
+            leds[center_leds[i]] = colour1;
+        }
+        
+        // Always light up rim and connector
+        int rim_leds[TOTAL_RIM_LEDS];
+        int rim_count;
+        GetRimLEDs(rim_leds, &rim_count);
+        
+        for (int i = 0; i < rim_count; i++)
+        {
+            leds[rim_leds[i]] = colour3;
+        }
+        
+        int connector_leds[CENTER_TO_RIM_CONNECTOR_LEDS];
+        int connector_count;
+        GetConnectorLEDs(connector_leds, &connector_count);
+        
+        for (int i = 0; i < connector_count; i++)
+        {
+            leds[connector_leds[i]] = colour3;
+        }
+        
+        // Light up alternating edge tentacles
+        for (int t = 0; t < NUM_EDGE_TENTACLES; t++)
+        {
+            if ((t % 2 == 0) == alternate) // Alternate between even/odd tentacles
+            {
+                int edge_leds[EDGE_TENTACLE_LEDS_EACH];
+                int edge_count;
+                GetEdgeTentacleLEDs(t, edge_leds, &edge_count);
+                
+                for (int i = 0; i < edge_count; i++)
+                {
+                    leds[edge_leds[i]] = colour2;
+                }
+            }
+        }
+    }
+    
+    FadeLeds(100);
+}
+
+
+#endif // ADVANCED_JELLYFISH_GEOMETRY
+
 // ----- Effect utils -----
 
 // Map any x, y coordinate on LED matrix to LED array index
 static int MapXYtoIndex(int x, int y)
 {
-#ifdef VERTICAL_ZIGZAG
+#ifdef ADVANCED_JELLYFISH_GEOMETRY
+    // Use advanced geometry mapping
+    return MapXYToAdvancedLED(x, y);
+#elif defined(VERTICAL_ZIGZAG)
     // Vertical zigzag for jellyfish - tentacles alternate up/down
     // Each pair of X columns represents one tentacle (down and up)
     x %= NUMBER_X_LEDS;
