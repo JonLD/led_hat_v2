@@ -329,6 +329,27 @@ void ControlLed(bool beatDetected)
 // Map any x, y coordinate on LED matrix to LED array index
 static int MapXYtoIndex(int x, int y)
 {
+#ifdef VERTICAL_ZIGZAG
+    // Vertical zigzag for jellyfish - tentacles alternate up/down
+    // Each pair of X columns represents one tentacle (down and up)
+    x %= NUMBER_X_LEDS;
+    if (x < 0)
+    {
+        x += NUMBER_X_LEDS;
+    }
+    int i;
+    if (x % 2 == 0)
+    {
+        // Even X: LEDs go down (normal direction)
+        i = y + x * NUMBER_Y_LEDS;
+    }
+    else
+    {
+        // Odd X: LEDs go up (reversed direction)
+        i = (x + 1) * NUMBER_Y_LEDS - y - 1;
+    }
+#else
+    // Horizontal zigzag for hat - rows alternate left/right
     x %= NUMBER_X_LEDS;
     if (x < 0)
     {
@@ -344,6 +365,7 @@ static int MapXYtoIndex(int x, int y)
     {
         i = (MAX_X_INDEX + 1) * (y + 1) - (x + 1);
     }
+#endif
 
     return i;
 }

@@ -27,6 +27,7 @@ enum class Colour : int8_t
     fire = 4,
     purue = 14,
     blue_red = 15,
+    cyan = 16,  // Light blue
 };
 
 enum class Effect : int8_t

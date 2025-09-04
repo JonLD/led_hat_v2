@@ -3,7 +3,10 @@
 
 #include <FastLED.h>
 #include <config.h>
-#include "beat_detection.h"
+
+// Beat timing variables (defined in hat.cpp for jellyfish version)
+extern unsigned long lastBeatTime_ms;
+extern bool isBeatDetected;
 
 extern CRGB colour1;
 extern CRGB colour2;

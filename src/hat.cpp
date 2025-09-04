@@ -4,16 +4,16 @@
 #include <WiFi.h>
 #include <Wire.h>
 
-#include "beat_detection.h"
 #include "config.h"
 #include "effects.h"
-#include "i2s_mic.h"
 #include "interface.h"
 #include "timing.h"
 #include "profiling.h"
 
-#define AMBIENT_EFFECT_TIMEOUT_MS 1000
-#define BEAT_EFFECT_TIMEOUT_MS 520
+#define BPM 120
+#define BEAT_INTERVAL_MS (60000 / BPM)  // 500ms at 120 BPM
+#define EFFECT_CHANGE_INTERVAL_MS (4 * 60 * 1000)  // 4 minutes
+#define COLOR_CHANGE_INTERVAL_MS (8 * 60 * 1000)   // 8 minutes
 
 #define PLAY_EFFECT_SEQUENCE(effect) PlayEffectSequence(effect, size(effect))
 
@@ -25,6 +25,15 @@ Effect currentEffect = static_cast<Effect>(radioData.effect);
 static void SetEffectColour();
 static void PlayEffectSequence(effect_array_t effects_array, size_t array_size);
 static void EffectSelectionEngine();
+static void AutoRotateEffects();
+static void AutoRotateColors();
+static void GenerateFixedBeat();
+
+// Fixed BPM timing variables
+unsigned long lastBeatTime_ms = 0;  // Global for effects.cpp
+bool isBeatDetected = false;  // Global for effects.cpp
+static unsigned long lastEffectChangeTime_ms = 0;
+static unsigned long lastColorChangeTime_ms = 0;
 static void PlaySelectedEffect();
 static void PopulateRadioData(const uint8_t *esp_now_info, const uint8_t *incomingData, int data_len);
 
@@ -90,6 +99,9 @@ static void SetEffectColour()
         colour1 = colour2 = CRGB::Blue;
         colour3 = CRGB::White;
         break;
+    case Colour::cyan:
+        colour1 = colour2 = colour3 = CRGB::Cyan;
+        break;
     case Colour::cb:
         colour1 = CRGB::OrangeRed;
         colour2 = CRGB::Green;
@@ -131,24 +143,57 @@ static void PlayEffectSequence(effect_array_t effects_array, size_t array_size)
     effects_array[i]();
 }
 
+// Generate fixed BPM beat timing
+static void GenerateFixedBeat()
+{
+    unsigned long currentTime = GetMillis();
+    if (currentTime - lastBeatTime_ms >= BEAT_INTERVAL_MS)
+    {
+        isBeatDetected = true;
+        lastBeatTime_ms = currentTime;
+    }
+}
+
+// Auto-rotate through effects every 4 minutes
+static void AutoRotateEffects()
+{
+    unsigned long currentTime = GetMillis();
+    if (currentTime - lastEffectChangeTime_ms >= EFFECT_CHANGE_INTERVAL_MS)
+    {
+        // Weighted rotation - vertical waves appear more often
+        static uint8_t effectIndex = 0;
+        Effect effects[] = {Effect::wave_up, Effect::wave_down, Effect::wave_up, 
+                           Effect::wave_down, Effect::wave_clockwise, 
+                           Effect::wave_anticlockwise, Effect::twinkle};
+        currentEffect = effects[effectIndex];
+        effectIndex = (effectIndex + 1) % 7;
+        lastEffectChangeTime_ms = currentTime;
+    }
+}
+
+// Auto-rotate through colors every 8 minutes
+static void AutoRotateColors()
+{
+    unsigned long currentTime = GetMillis();
+    if (currentTime - lastColorChangeTime_ms >= COLOR_CHANGE_INTERVAL_MS)
+    {
+        // Cycle through available colors
+        static uint8_t colorIndex = 0;
+        Colour colors[] = {Colour::blue, Colour::cyan, Colour::red, 
+                          Colour::green, Colour::purple, Colour::fire};
+        currentColour = colors[colorIndex];
+        SetEffectColour();
+        colorIndex = (colorIndex + 1) % 6;
+        lastColorChangeTime_ms = currentTime;
+    }
+}
+
 static void EffectSelectionEngine()
 {
-    static bool isAmbientSection = false;
-    if (isBeatDetected && isAmbientSection)
-    {
-        isAmbientSection = false;
-        currentEffect = beatEffectEnumValues[random(size(beatEffectEnumValues))];
-    }
-    else if (GetMillis() - lastBeatTime_ms > AMBIENT_EFFECT_TIMEOUT_MS && !isAmbientSection)
-    {
-        isAmbientSection = true;
-        currentEffect = ambientEffectEnumValues[random(size(ambientEffectEnumValues))];
-    }
-    // TODO: seems to be a bit broken with this
-    // else if (GetMillis() - lastBeatTime_ms > BEAT_EFFECT_TIMEOUT_MS && !isAmbientSection)
-    // {
-    //     currentEffect = static_cast<Effect>(beatEffectEnumValues[random(size(beatEffectEnumValues))]);
-    // }
+    // For jellyfish, simply use auto-rotation
+    // Effects and colors change automatically on their own timers
+    AutoRotateEffects();
+    AutoRotateColors();
 }
 
 // logic for selection of next pre-set effect
@@ -209,18 +254,28 @@ void setup()
     }
     esp_now_register_recv_cb(PopulateRadioData);
 
-    I2sInit();
+    // No microphone init needed for jellyfish
     FastLedInit();
 
+    // Initialize with first color and effect
+    currentEffect = Effect::wave_up;
+    currentColour = Colour::blue;
     SetEffectColour();
+    
+    // Initialize timers
+    lastBeatTime_ms = GetMillis();
+    lastEffectChangeTime_ms = GetMillis();
+    lastColorChangeTime_ms = GetMillis();
 }
 
 void loop()
 {
+    // Still respond to controller commands if connected
     if (radioData.isEffectCommand)
     {
         radioData.isEffectCommand = false;
         currentEffect = static_cast<Effect>(radioData.effect);
+        lastEffectChangeTime_ms = GetMillis();  // Reset auto-rotate timer
     }
     else
     {
@@ -229,6 +284,7 @@ void loop()
         {
             currentColour = radioDataColour;
             SetEffectColour();
+            lastColorChangeTime_ms = GetMillis();  // Reset auto-rotate timer
         }
     }
     static uint8_t lastBrightness = radioData.brightness;
@@ -238,29 +294,31 @@ void loop()
         lastBrightness = radioData.brightness;
         Serial.println("setting new brightness");
     }
+    
     EMIT_PROFILING_EVENT;
-    int32_t rawMicSamples[FFT_BUFFER_LENGTH];
-    if (ReadMicData(rawMicSamples))
-    {
-        EMIT_MIC_READ_EVENT;
-        ComputeFFT(rawMicSamples);
-        EMIT_PROFILING_EVENT;
-        DetectBeat();
-        EMIT_PROFILING_EVENT;
-    }
-    if (radioData.ambientOverride)
-    {
-        isBeatDetected = false;
-    }
+    
+    // Generate fixed BPM beat instead of microphone detection
+    GenerateFixedBeat();
+    
+    // Handle effect and color auto-rotation
     EffectSelectionEngine();
+    
+    // Play the selected effect
     PlaySelectedEffect();
+    
     EMIT_PROFILING_EVENT;
+    
+    // Update LEDs
     EVERY_N_MILLIS(15)
     {
         FastLED.show();
     }
+    
     EMIT_PROFILING_EVENT;
+    
+    // Reset beat flag for next cycle
     isBeatDetected = false;
+    
 #ifdef BPS_PROFILING
     Serial.print("\n");
 #endif
