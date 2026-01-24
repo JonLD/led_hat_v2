@@ -1,6 +1,6 @@
 #include "profiling.h"
 
-#include <arduino.h>
+#include <Arduino.h>
 #include "beat_detection.h"
 
 #include "driver/i2s.h"

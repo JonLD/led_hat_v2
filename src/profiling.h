@@ -1,7 +1,7 @@
 #ifndef PROFILING_H
 #define PROFILING_H
 
-#include <arduino.h>
+#include <Arduino.h>
 
 #include "timing.h"
 
