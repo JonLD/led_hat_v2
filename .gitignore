@@ -2,3 +2,4 @@
 .vscode/*
 extensions.json
 platformio.ini
+managed_components/espressif__esp-dsp

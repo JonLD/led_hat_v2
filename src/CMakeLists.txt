@@ -7,8 +7,8 @@ idf_component_register(
         "wifi.cpp"
         "profiling.cpp"
         "i2s_mic.cpp"
+        "beat_detection.cpp"
         # Add your .cpp files here as you create them
-        # "beat_detection.cpp"
         # "effects.cpp"
     INCLUDE_DIRS
         "."
@@ -19,6 +19,7 @@ idf_component_register(
         esp_netif
         driver
         esp_timer
+        esp-dsp
         # FastLED-idf - will add after basic build works
         # Add more ESP-IDF components as needed
 )

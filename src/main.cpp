@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "beat_detection.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,6 +31,7 @@ extern "C" void app_main(void)
     InitEspNow();
     // - I2S microphone
     I2sInit();
+    InitBeatDetection();
     // - FastLED
     // - Create FreeRTOS tasks
     //

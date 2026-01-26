@@ -54,7 +54,4 @@ extern int64_t microsNow;
 #define EMIT_DETECTION_EVENT () do { } while(0)
 #endif // BEAT_DETECTION_PROFILING
 
-void PrintVector(float *, uint16_t, uint8_t);
-
-
 #endif // PROFILING_H
