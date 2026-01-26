@@ -1,6 +1,6 @@
 #include "interface.h"
 
-#include <stdint.h>
+#include <Arduino.h>
 
 radioData_t radioData = {
     .isEffectCommand = false,

@@ -1,8 +1,7 @@
 #ifndef TIMING_H
 #define TIMING_H
 
-#include <stdint.h>
-#include <esp_timer.h>
+#include <Arduino.h>
 
 // Get the current number of micros since power on, from the ESP's hardware timer.
 // This would wrap after (2^64) / (10^6 * 60 * 60 * 24 * 365) = 584942 years

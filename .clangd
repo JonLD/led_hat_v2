@@ -1,0 +1,19 @@
+CompileFlags:
+  # Tell clangd to query the ESP32 GCC compiler for system include paths
+  CompilationDatabase: .
+
+  # Remove GCC-specific flags that clangd doesn't understand
+  Remove:
+    - -fno-shrink-wrap
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -mlongcalls
+    - -mtext-section-literals
+    - -fmacro-prefix-map=*
+    - -fno-rtti  # Already in CMakeLists, remove duplicate
+
+  # Add ESP32 toolchain system headers
+  Add:
+    - -I/home/jonld/.platformio/packages/toolchain-xtensa-esp-elf/xtensa-esp-elf/include
+    - -I/home/jonld/.platformio/packages/toolchain-xtensa-esp-elf/lib/gcc/xtensa-esp-elf/14.2.0/include
+    - --target=xtensa-esp32-elf

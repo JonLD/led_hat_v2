@@ -1,7 +1,7 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
-#include <stdint.h>
+#include <Arduino.h>
 
 #define BAUD_RATE 115200
 

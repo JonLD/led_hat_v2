@@ -12,7 +12,7 @@
 #define BEAT_DEBOUNCE_DURATION_MS 200
 #define MAX_BASS_FREQUENCY_HZ 140.0f
 
-uint32_t lastBeatTime_ms = 0;
+unsigned long lastBeatTime_ms = 0;
 bool isBeatDetected = false;
 
 typedef struct freqBandData_t

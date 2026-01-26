@@ -1,9 +1,9 @@
 #ifndef PROFILING_H
 #define PROFILING_H
 
-#include <stdint.h>
+#include <Arduino.h>
+
 #include "timing.h"
-#include "esp_log.h"
 
 #define SCL_INDEX 0x00
 #define SCL_TIME 0x01
@@ -28,7 +28,8 @@ extern int64_t microsNow;
 #define BPS_PROFILING
 #define EMIT_PROFILING_EVENT {\
     microsNow = GetMicros();\
-    ESP_LOGI("profiling", "%lld\t", (long long)(microsNow - lastProfilingPoint_ms));\
+    Serial.print(microsNow - lastProfilingPoint_ms);\
+    Serial.print("\t");\
     lastProfilingPoint_ms = microsNow;\
 }
 #else
@@ -38,7 +39,7 @@ extern int64_t microsNow;
 #ifdef PROFILE_MIC_READ
 #define EMIT_MIC_READ_EVENT {\
     microsNow = GetMicros();\
-    ESP_LOGI("profiling", "Mic read: %lld us", (long long)(microsNow - lastProfilingPoint_ms));\
+    Serial.println(microsNow - lastProfilingPoint_ms);\
     lastProfilingPoint_ms = microsNow;\
 }
 #else
@@ -48,11 +49,12 @@ extern int64_t microsNow;
 #ifdef BEAT_DETECTION_PROFILING
 #define BPS_PROFILING
 #define EMIT_DETECTION_EVENT (DETECTION_CONDITION) {\
-    ESP_LOGI("profiling", "%d\t", DETECTION_CONDITION);\
+    Serial.print(DETECTION_CONDITION);\
+    Serial.print("\t");\
 }
 #else
 #define EMIT_DETECTION_EVENT () do { } while(0)
-#endif // BEAT_DETECTION_PROFILING
+#endif // TIME_PROFILING
 
 void PrintVector(float *, uint16_t, uint8_t);
 
